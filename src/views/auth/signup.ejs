@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign up · BookHive</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link href="/css/auth.css" rel="stylesheet">
+</head>
+<body class="auth-body">
+  <div class="auth-wrapper">
+    <div class="auth-panel">
+      <h2>Join BookHive 🐝</h2>
+      <p>Create your account to start borrowing.</p>
+</div>
+    <div class="auth-form">
+      <h3>Sign up</h3>
+      <form action="/auth/signup" method="post" id="signupForm">
+        <div class="form-group">
+          <label>Full name</label>
+          <input name="name" type="text" required>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input name="email" type="email" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input name="password" type="password" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>Confirm password</label>
+          <input name="confirmPassword" type="password" required minlength="6">
+        </div>
+        <button type="submit" class="btn-primary">Create account</button>
+        <p class="switch-auth">Already have an account? <a href="/auth/login">Log in</a></p>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
