@@ -10,32 +10,44 @@ export const getBooks = async (req, res) => {
   }
 };
 
-// Add new book
+// Add new book (✅ merge if duplicate, case-insensitive)
 export const addBook = async (req, res) => {
   try {
-    // ✅ Preserve 0, default only if missing/NaN
-    const hasQty =
-      req.body.quantity !== undefined &&
-      req.body.quantity !== null &&
-      req.body.quantity !== "";
-    const qty = hasQty ? Number(req.body.quantity) : 1;
+    const { title, author, genre } = req.body;
+    const quantity = Number(req.body.quantity) ?? 1;
 
-    const payload = {
-      title: req.body.title,
-      author: req.body.author,
-      genre: req.body.genre,
-      quantity: Number.isFinite(qty) ? qty : 1,
-    };
+    // check for existing book (ONLY by title, author, genre)
+    let existingBook = await Book.findOne({
+      titleLower: title.trim().toLowerCase(),
+      authorLower: author.trim().toLowerCase(),
+      genreLower: genre.trim().toLowerCase(),
+    });
 
-    const book = new Book(payload);
-    await book.save();
-    res.status(201).json(book);
+    if (existingBook) {
+      // increase quantity
+      existingBook.quantity += quantity;
+      await existingBook.save();
+      return res.status(200).json(existingBook);
+    }
+
+    // else, create new book
+    const newBook = new Book({
+      title: title.trim(),
+      author: author.trim(),
+      genre: genre.trim(),
+      quantity,
+    });
+
+    await newBook.save();
+    res.status(201).json(newBook);
+
   } catch (err) {
+    console.error(err);
     res.status(400).json({ error: "Failed to add book" });
   }
 };
 
-// Update book
+// Update book (✅ still works with lowercase fields)
 export const updateBook = async (req, res) => {
   try {
     const payload = {
@@ -45,18 +57,24 @@ export const updateBook = async (req, res) => {
     };
 
     if (req.body.quantity !== undefined) {
-      payload.quantity = Number(req.body.quantity); // ✅ preserves 0
+      payload.quantity = Number(req.body.quantity);
     }
+
+    if (req.body.title)  payload.titleLower  = req.body.title.trim().toLowerCase();
+    if (req.body.author) payload.authorLower = req.body.author.trim().toLowerCase();
+    if (req.body.genre)  payload.genreLower  = req.body.genre.trim().toLowerCase();
 
     const book = await Book.findByIdAndUpdate(req.params.id, payload, {
       new: true,
-      runValidators: true,
+      runValidators: true
     });
+
     res.json(book);
   } catch (err) {
     res.status(400).json({ error: "Failed to update book" });
   }
 };
+
 
 // Delete book
 export const deleteBook = async (req, res) => {
