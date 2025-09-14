@@ -190,3 +190,114 @@ darkToggle.addEventListener("click", () => {
 
 /* ===== Initial Load ===== */
 fetchBooks();
+
+
+
+
+
+/* Filtering System */
+// Add filter controls to the UI
+function addFilterControls() {
+  const tableSection = document.querySelector('.table-section');
+  const filterControls = document.createElement('div');
+  filterControls.className = 'filter-controls';
+  filterControls.innerHTML = `
+    <h3>Filter Books</h3>
+    <div class="filter-inputs">
+      <input type="text" id="filterTitle" placeholder="Filter by title" />
+      <input type="text" id="filterAuthor" placeholder="Filter by author" />
+      <select id="filterQuantity">
+        <option value="">All quantities</option>
+        <option value="0">Out of stock (0)</option>
+        <option value="1">Low stock (1-5)</option>
+        <option value="6">In stock (6+)</option>
+      </select>
+      <button id="clearFilters">Clear Filters</button>
+    </div>
+  `;
+  
+  // Insert after the search box
+  const searchBox = document.getElementById('searchBox');
+  tableSection.insertBefore(filterControls, searchBox.nextSibling);
+}
+
+// Apply filters to books
+function filterBooks(books) {
+  const titleFilter = document.getElementById('filterTitle').value.toLowerCase();
+  const authorFilter = document.getElementById('filterAuthor').value.toLowerCase();
+  const quantityFilter = document.getElementById('filterQuantity').value;
+  
+  return books.filter(book => {
+    // Title filter
+    if (titleFilter && !book.title.toLowerCase().includes(titleFilter)) {
+      return false;
+    }
+    
+    // Author filter
+    if (authorFilter && !book.author.toLowerCase().includes(authorFilter)) {
+      return false;
+    }
+    
+    // Quantity filter
+    if (quantityFilter) {
+      const quantity = book.quantity || 0;
+      switch(quantityFilter) {
+        case '0':
+          if (quantity !== 0) return false;
+          break;
+        case '1':
+          if (quantity < 1 || quantity > 5) return false;
+          break;
+        case '6':
+          if (quantity < 6) return false;
+          break;
+      }
+    }
+    
+    return true;
+  });
+}
+
+// Update the fetchBooks function to support filtering
+async function fetchBooks() {
+  try {
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error("Failed to fetch books");
+    const books = await res.json();
+    
+    // Apply filters if any are active
+    const filteredBooks = filterBooks(books);
+    renderBooks(filteredBooks);
+    updateStats(books); // Still update stats with all books, not filtered ones
+  } catch (error) {
+    console.error("Error fetching books:", error);
+    showNotification("❌ Server Timeout", "error");
+  }
+}
+
+// Add event listeners for filters
+function setupFilterEvents() {
+  document.getElementById('filterTitle').addEventListener('input', fetchBooks);
+  document.getElementById('filterAuthor').addEventListener('input', fetchBooks);
+  document.getElementById('filterQuantity').addEventListener('change', fetchBooks);
+  
+  // Clear filters button
+  document.getElementById('clearFilters').addEventListener('click', () => {
+    document.getElementById('filterTitle').value = '';
+    document.getElementById('filterAuthor').value = '';
+    document.getElementById('filterQuantity').value = '';
+    fetchBooks();
+  });
+}
+
+// Update the initial load to include filter setup
+function initializeApp() {
+  addFilterControls();
+  setupFilterEvents();
+  fetchBooks();
+}
+
+// Replace the initial load call with the new initialize function
+// Remove: fetchBooks();
+// Add:
+initializeApp();
