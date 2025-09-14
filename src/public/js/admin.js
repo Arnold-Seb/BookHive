@@ -153,6 +153,52 @@ searchBox.addEventListener("input", (e) => {
   });
 });
 
+let currentSort = { column: null, asc: true };
+
+// Handle sorting
+document.querySelectorAll("#booksTable thead th[data-column]").forEach((th) => {
+  th.addEventListener("click", () => {
+    const column = th.dataset.column;
+
+    // Toggle sort direction if same column is clicked
+    if (currentSort.column === column) {
+      currentSort.asc = !currentSort.asc;
+    } else {
+      currentSort = { column, asc: true };
+    }
+
+    sortBooks(column, currentSort.asc);
+  });
+});
+
+function sortBooks(column, asc = true) {
+  const rows = Array.from(booksTable.querySelectorAll("tr"));
+  rows.sort((a, b) => {
+    const aVal = a.querySelector(`td:nth-child(${getColumnIndex(column)})`).innerText.toLowerCase();
+    const bVal = b.querySelector(`td:nth-child(${getColumnIndex(column)})`).innerText.toLowerCase();
+
+    if (aVal < bVal) return asc ? -1 : 1;
+    if (aVal > bVal) return asc ? 1 : -1;
+    return 0;
+  });
+
+  // Re-attach rows
+  booksTable.innerHTML = "";
+  rows.forEach((row) => booksTable.appendChild(row));
+}
+
+// Map column name to index in table
+function getColumnIndex(column) {
+  switch (column) {
+    case "title": return 1;
+    case "author": return 2;
+    case "genre": return 3;
+    case "available": return 4;
+    default: return 1;
+  }
+}
+
+
 /* ===== Dark Mode ===== */
 darkToggle.addEventListener("click", () => {
   document.body.classList.toggle("dark");
