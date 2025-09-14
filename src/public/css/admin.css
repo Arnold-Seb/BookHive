@@ -5,13 +5,13 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: linear-gradient(135deg, #e2e8f0, #cbd5e1); /* soft gray gradient */
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
   color: #1f2937;
   transition: background 0.4s ease, color 0.4s ease;
 }
 
 body.dark {
-  background: linear-gradient(135deg, #111827, #1e293b); /* dark muted gradient */
+  background: linear-gradient(135deg, #111827, #1e293b);
   color: #f9fafb;
 }
 
@@ -210,19 +210,19 @@ body.dark .stat-card h3 {
 
 /* Specific gradient styles per card */
 .stat-card.total p {
-  background: linear-gradient(135deg, #6366f1, #4338ca); /* blue/purple */
+  background: linear-gradient(135deg, #6366f1, #4338ca);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .stat-card.available p {
-  background: linear-gradient(135deg, #10b981, #059669); /* green */
+  background: linear-gradient(135deg, #10b981, #059669);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .stat-card.borrowed p {
-  background: linear-gradient(135deg, #ef4444, #b91c1c); /* red */
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -237,7 +237,7 @@ body.dark .stat-card h3 {
 table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed; /* ensures consistent column sizing */
+  table-layout: fixed;
 }
 
 th, td {
@@ -245,14 +245,14 @@ th, td {
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap; /* truncate long text */
+  white-space: nowrap;
 }
 
 td:last-child, th:last-child {
-  width: 180px;   /* fixed width for Actions column */
+  width: 180px;
   text-align: center;
-  white-space: nowrap; /* keep buttons in one row */
-  overflow: visible;   /* show buttons fully */
+  white-space: nowrap;
+  overflow: visible;
 }
 
 td:not(:last-child) {
@@ -263,10 +263,10 @@ td:not(:last-child) {
 }
 
 th {
-  background: linear-gradient(135deg, #475569, #334155); /* dark pastel gradient */
+  background: linear-gradient(135deg, #475569, #334155);
   color: #f9fafb;
   font-weight: 600;
-  border-radius: 0; /* remove bubble wrap */
+  border-radius: 0;
 }
 
 body.dark th {
@@ -454,7 +454,7 @@ body.dark .modal-content {
 #notification {
   position: fixed;
   top: 20px;
-  right: -400px; /* start off screen */
+  right: -400px;
   min-width: 250px;
   max-width: 350px;
   padding: 14px 20px;
@@ -472,7 +472,7 @@ body.dark .modal-content {
 
 /* When active */
 #notification.show {
-  right: 20px;  /* slide into view */
+  right: 20px;
   opacity: 1;
 }
 

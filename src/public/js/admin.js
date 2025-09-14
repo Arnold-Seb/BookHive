@@ -15,7 +15,7 @@ const editBookForm = document.getElementById("editBookForm");
 /* ===== Notifications ===== */
 function showNotification(message, type = "success") {
   notification.textContent = message;
-  notification.className = `${type} show`; // apply color + slide-in
+  notification.className = `${type} show`;
   setTimeout(() => {
     notification.classList.remove("show");
   }, 3000);
@@ -35,19 +35,16 @@ async function fetchBooks() {
   }
 }
 
-// Update Dashboard Stats
+// Update Dashboard Stats (📌 now includes quantity)
 function updateStats(books) {
-  const total = books.length;
-
-  // if "available" is missing, treat it as available
-  const available = books.filter(b => b.available !== false).length;
-  const borrowed = total - available;
+  const total = books.reduce((sum, b) => sum + (b.quantity || 0), 0);
+  const available = books.filter(b => (b.quantity || 0) > 0).length;
+  const borrowed = books.length - available;
 
   document.getElementById("totalBooks").textContent = total;
   document.getElementById("availableBooks").textContent = available;
   document.getElementById("borrowedBooks").textContent = borrowed;
 }
-
 
 function renderBooks(books) {
   booksTable.innerHTML = "";
@@ -57,9 +54,10 @@ function renderBooks(books) {
       <td title="${book.title}">${book.title}</td>
       <td title="${book.author}">${book.author}</td>
       <td title="${book.genre}">${book.genre}</td>
-      <td>${book.available ? "Available" : "Borrowed"}</td>
+      <td>${book.quantity ?? 0}</td>
+      <td>${(book.quantity ?? 0) > 0 ? "🟢 Available" : "🔴 Unavailable"}</td>
       <td>
-        <button onclick="editBook('${book._id}', '${book.title}', '${book.author}', '${book.genre}')">✏️ Edit</button>
+        <button onclick="editBook('${book._id}', '${book.title}', '${book.author}', '${book.genre}', ${book.quantity ?? 0})">✏️ Edit</button>
         <button onclick="deleteBook('${book._id}')">🗑️ Delete</button>
       </td>
     `;
@@ -70,10 +68,12 @@ function renderBooks(books) {
 /* ===== Add Book ===== */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  const qVal = Number(document.getElementById("quantity").value);
   const newBook = {
     title: document.getElementById("title").value,
     author: document.getElementById("author").value,
     genre: document.getElementById("genre").value,
+    quantity: Number.isFinite(qVal) ? qVal : 1, // ✅ preserve 0
   };
   try {
     const res = await fetch(API_URL, {
@@ -92,12 +92,13 @@ form.addEventListener("submit", async (e) => {
 });
 
 /* ===== Edit Book ===== */
-function editBook(id, title, author, genre) {
+function editBook(id, title, author, genre, quantity) {
   document.getElementById("editId").value = id;
   document.getElementById("editTitle").value = title;
   document.getElementById("editAuthor").value = author;
   document.getElementById("editGenre").value = genre;
-  editModal.style.display = "flex";   // ✅ show as flex, stays centered
+  document.getElementById("editQuantity").value = quantity;
+  editModal.style.display = "flex";
 }
 
 /* Close modal */
@@ -108,10 +109,12 @@ window.onclick = (e) => { if (e.target === editModal) editModal.style.display = 
 editBookForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = document.getElementById("editId").value;
+  const qVal = Number(document.getElementById("editQuantity").value);
   const updatedBook = {
     title: document.getElementById("editTitle").value,
     author: document.getElementById("editAuthor").value,
     genre: document.getElementById("editGenre").value,
+    quantity: Number.isFinite(qVal) ? qVal : 1, // ✅ preserve 0
   };
   try {
     const res = await fetch(`${API_URL}/${id}`, {
@@ -121,14 +124,13 @@ editBookForm.addEventListener("submit", async (e) => {
     });
     if (!res.ok) throw new Error("Failed to update book");
     fetchBooks();
-    editModal.style.display = "none";   // ✅ close properly
+    editModal.style.display = "none";
     showNotification("✏️ Book updated successfully", "success");
   } catch (error) {
     console.error("Error updating book:", error);
     showNotification("❌ Failed to update book", "error");
   }
 });
-
 
 /* ===== Delete Book with Custom Modal ===== */
 let bookToDelete = null;
@@ -138,7 +140,7 @@ const confirmDelete = document.getElementById("confirmDelete");
 
 function deleteBook(id) {
   bookToDelete = id;
-  deleteModal.style.display = "flex"; // show modal
+  deleteModal.style.display = "flex";
 }
 
 // Cancel
@@ -173,7 +175,6 @@ window.addEventListener("click", (e) => {
   }
 });
 
-
 /* ===== Search ===== */
 searchBox.addEventListener("input", (e) => {
   const query = e.target.value.toLowerCase();
@@ -181,52 +182,6 @@ searchBox.addEventListener("input", (e) => {
     row.style.display = row.textContent.toLowerCase().includes(query) ? "" : "none";
   });
 });
-
-let currentSort = { column: null, asc: true };
-
-// Handle sorting
-document.querySelectorAll("#booksTable thead th[data-column]").forEach((th) => {
-  th.addEventListener("click", () => {
-    const column = th.dataset.column;
-
-    // Toggle sort direction if same column is clicked
-    if (currentSort.column === column) {
-      currentSort.asc = !currentSort.asc;
-    } else {
-      currentSort = { column, asc: true };
-    }
-
-    sortBooks(column, currentSort.asc);
-  });
-});
-
-function sortBooks(column, asc = true) {
-  const rows = Array.from(booksTable.querySelectorAll("tr"));
-  rows.sort((a, b) => {
-    const aVal = a.querySelector(`td:nth-child(${getColumnIndex(column)})`).innerText.toLowerCase();
-    const bVal = b.querySelector(`td:nth-child(${getColumnIndex(column)})`).innerText.toLowerCase();
-
-    if (aVal < bVal) return asc ? -1 : 1;
-    if (aVal > bVal) return asc ? 1 : -1;
-    return 0;
-  });
-
-  // Re-attach rows
-  booksTable.innerHTML = "";
-  rows.forEach((row) => booksTable.appendChild(row));
-}
-
-// Map column name to index in table
-function getColumnIndex(column) {
-  switch (column) {
-    case "title": return 1;
-    case "author": return 2;
-    case "genre": return 3;
-    case "available": return 4;
-    default: return 1;
-  }
-}
-
 
 /* ===== Dark Mode ===== */
 darkToggle.addEventListener("click", () => {

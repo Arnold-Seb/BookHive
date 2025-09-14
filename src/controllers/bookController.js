@@ -13,7 +13,21 @@ export const getBooks = async (req, res) => {
 // Add new book
 export const addBook = async (req, res) => {
   try {
-    const book = new Book(req.body);
+    // ✅ Preserve 0, default only if missing/NaN
+    const hasQty =
+      req.body.quantity !== undefined &&
+      req.body.quantity !== null &&
+      req.body.quantity !== "";
+    const qty = hasQty ? Number(req.body.quantity) : 1;
+
+    const payload = {
+      title: req.body.title,
+      author: req.body.author,
+      genre: req.body.genre,
+      quantity: Number.isFinite(qty) ? qty : 1,
+    };
+
+    const book = new Book(payload);
     await book.save();
     res.status(201).json(book);
   } catch (err) {
@@ -24,7 +38,20 @@ export const addBook = async (req, res) => {
 // Update book
 export const updateBook = async (req, res) => {
   try {
-    const book = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const payload = {
+      title: req.body.title,
+      author: req.body.author,
+      genre: req.body.genre,
+    };
+
+    if (req.body.quantity !== undefined) {
+      payload.quantity = Number(req.body.quantity); // ✅ preserves 0
+    }
+
+    const book = await Book.findByIdAndUpdate(req.params.id, payload, {
+      new: true,
+      runValidators: true,
+    });
     res.json(book);
   } catch (err) {
     res.status(400).json({ error: "Failed to update book" });

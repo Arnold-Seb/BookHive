@@ -26,6 +26,8 @@
         <input type="text" id="title" placeholder="Book Title" required />
         <input type="text" id="author" placeholder="Author" required />
         <input type="text" id="genre" placeholder="Genre" required />
+        <!--Quantity field -->
+        <input type="number" id="quantity" placeholder="Quantity" min="1" required />
         <button type="submit">➕ Add Book</button>
       </form>
     </section>
@@ -53,7 +55,12 @@
       <table id="booksTable">
         <thead>
           <tr>
-            <th>Title</th><th>Author</th><th>Genre</th><th>Status</th><th>Actions</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Genre</th>
+            <th>Quantity</th>
+            <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -74,6 +81,9 @@
         <input type="text" id="editAuthor" placeholder="Author" required />
         <label for="Genre">Genre:</label>
         <input type="text" id="editGenre" placeholder="Genre" required />
+        <!--Quantity field in modal -->
+        <label for="Quantity">Quantity:</label>
+        <input type="number" id="editQuantity" placeholder="Quantity" min="0" required />
         <button type="submit">💾 Save Changes</button>
       </form>
     </div>
@@ -90,7 +100,6 @@
       </div>
     </div>
   </div>
-
 
   <footer>
     <p>BookHive © 2025 | Admin Panel</p>
