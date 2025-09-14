@@ -28,11 +28,26 @@ async function fetchBooks() {
     if (!res.ok) throw new Error("Failed to fetch books");
     const books = await res.json();
     renderBooks(books);
+    updateStats(books);
   } catch (error) {
     console.error("Error fetching books:", error);
     showNotification("❌ Server Timeout", "error");
   }
 }
+
+// Update Dashboard Stats
+function updateStats(books) {
+  const total = books.length;
+
+  // if "available" is missing, treat it as available
+  const available = books.filter(b => b.available !== false).length;
+  const borrowed = total - available;
+
+  document.getElementById("totalBooks").textContent = total;
+  document.getElementById("availableBooks").textContent = available;
+  document.getElementById("borrowedBooks").textContent = borrowed;
+}
+
 
 function renderBooks(books) {
   booksTable.innerHTML = "";

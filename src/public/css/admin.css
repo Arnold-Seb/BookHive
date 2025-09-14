@@ -156,6 +156,83 @@ form button:hover {
   transform: scale(1.05);
 }
 
+/* ===== Stats Section ===== */
+.stats-section {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+  margin: 20px auto;
+  max-width: 1000px;
+}
+
+.stat-card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  color: #0f172a;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease;
+}
+
+body.dark .stat-card {
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.stat-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+body.dark .stat-card h3 {
+  color: #e2e8f0;
+}
+
+/* Gradient numbers */
+.stat-card p {
+  margin: 10px 0 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6366f1, #4338ca);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-fill-color: transparent;
+}
+
+/* Specific gradient styles per card */
+.stat-card.total p {
+  background: linear-gradient(135deg, #6366f1, #4338ca); /* blue/purple */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stat-card.available p {
+  background: linear-gradient(135deg, #10b981, #059669); /* green */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stat-card.borrowed p {
+  background: linear-gradient(135deg, #ef4444, #b91c1c); /* red */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Hover effect */
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+
 /* ===== Table ===== */
 table {
   width: 100%;
