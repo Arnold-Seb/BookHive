@@ -130,20 +130,49 @@ editBookForm.addEventListener("submit", async (e) => {
 });
 
 
-/* ===== Delete Book ===== */
-async function deleteBook(id) {
-  if (confirm("Are you sure you want to delete this book?")) {
-    try {
-      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete book");
-      fetchBooks();
-      showNotification("🗑️ Book deleted", "success");
-    } catch (error) {
-      console.error("Error deleting book:", error);
-      showNotification("❌ Failed to delete book", "error");
-    }
-  }
+/* ===== Delete Book with Custom Modal ===== */
+let bookToDelete = null;
+const deleteModal = document.getElementById("deleteModal");
+const cancelDelete = document.getElementById("cancelDelete");
+const confirmDelete = document.getElementById("confirmDelete");
+
+function deleteBook(id) {
+  bookToDelete = id;
+  deleteModal.style.display = "flex"; // show modal
 }
+
+// Cancel
+cancelDelete.addEventListener("click", () => {
+  deleteModal.style.display = "none";
+  bookToDelete = null;
+});
+
+// Confirm
+confirmDelete.addEventListener("click", async () => {
+  if (!bookToDelete) return;
+
+  try {
+    const res = await fetch(`${API_URL}/${bookToDelete}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Failed to delete book");
+    fetchBooks();
+    showNotification("🗑️ Book deleted", "success");
+  } catch (error) {
+    console.error("Error deleting book:", error);
+    showNotification("❌ Failed to delete book", "error");
+  } finally {
+    deleteModal.style.display = "none";
+    bookToDelete = null;
+  }
+});
+
+// Close modal if clicked outside
+window.addEventListener("click", (e) => {
+  if (e.target === deleteModal) {
+    deleteModal.style.display = "none";
+    bookToDelete = null;
+  }
+});
+
 
 /* ===== Search ===== */
 searchBox.addEventListener("input", (e) => {

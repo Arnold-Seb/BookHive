@@ -402,6 +402,54 @@ body.dark .modal-content {
   to { transform: scale(1); opacity: 1; }
 }
 
+/* ===== Delete Modal ===== */
+#deleteModal .modal-content {
+  max-width: 400px;
+  text-align: center;
+}
+
+#deleteModal h2 {
+  margin-bottom: 10px;
+  font-size: 1.3rem;
+}
+
+#deleteModal p {
+  margin-bottom: 20px;
+  font-size: 1rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+#cancelDelete {
+  background: #9ca3af;
+  color: #fff;
+}
+
+#confirmDelete {
+  background: #ef4444;
+  color: #fff;
+}
+
+.modal-actions button:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+
 /* ===== Notifications ===== */
 #notification {
   position: fixed;
