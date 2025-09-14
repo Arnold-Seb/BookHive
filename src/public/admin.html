@@ -19,19 +19,6 @@
   <div id="notification"></div>
 
   <main>
-    <!-- Add Book Form -->
-    <section class="form-section glass">
-      <h2>Add a New Book</h2>
-      <form id="addBookForm">
-        <input type="text" id="title" placeholder="Book Title" required />
-        <input type="text" id="author" placeholder="Author" required />
-        <input type="text" id="genre" placeholder="Genre" required />
-        <!--Quantity field -->
-        <input type="number" id="quantity" placeholder="Quantity" min="1" required />
-        <button type="submit">➕ Add Book</button>
-      </form>
-    </section>
-
     <!-- Dashboard Stats -->
     <section class="stats-section">
       <div class="stat-card total">
@@ -46,6 +33,18 @@
         <h3>❌ Borrowed</h3>
         <p id="borrowedBooks">0</p>
       </div>
+    </section>
+    <!-- Add Book Form -->
+    <section class="form-section glass">
+      <h2>Add a New Book</h2>
+      <form id="addBookForm">
+        <input type="text" id="title" placeholder="Book Title" required />
+        <input type="text" id="author" placeholder="Author" required />
+        <input type="text" id="genre" placeholder="Genre" required />
+        <!--Quantity field -->
+        <input type="number" id="quantity" placeholder="Quantity" min="1" required />
+        <button type="submit">➕ Add Book</button>
+      </form>
     </section>
 
     <!-- Books Table -->
@@ -100,6 +99,31 @@
       </div>
     </div>
   </div>
+
+  <!-- Borrow Confirmation Modal -->
+  <div id="borrowModal" class="modal">
+    <div class="modal-content glass">
+      <h2>Confirm Borrow</h2>
+      <p>Are you sure you want to borrow this book?</p>
+      <div class="modal-actions">
+        <button id="cancelBorrow">Cancel</button>
+        <button id="confirmBorrow">Borrow</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Return Confirmation Modal -->
+  <div id="returnModal" class="modal">
+    <div class="modal-content glass">
+      <h2>Confirm Return</h2>
+      <p>Are you sure you want to return this book?</p>
+      <div class="modal-actions">
+        <button id="cancelReturn">Cancel</button>
+        <button id="confirmReturn">Return</button>
+      </div>
+    </div>
+  </div>
+
 
   <footer>
     <p>BookHive © 2025 | Admin Panel</p>

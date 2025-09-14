@@ -85,3 +85,36 @@ export const deleteBook = async (req, res) => {
     res.status(400).json({ error: "Failed to delete book" });
   }
 };
+
+
+// Borrow book (decrease quantity)
+export const borrowBook = async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ error: "Book not found" });
+
+    if (book.quantity > 0) {
+      book.quantity -= 1;
+      await book.save();
+      return res.json(book);
+    } else {
+      return res.status(400).json({ error: "Book unavailable" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Failed to borrow book" });
+  }
+};
+
+// Return book (increase quantity)
+export const returnBook = async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ error: "Book not found" });
+
+    book.quantity += 1;
+    await book.save();
+    res.json(book);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to return book" });
+  }
+};

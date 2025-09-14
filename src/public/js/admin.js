@@ -18,7 +18,7 @@ function showNotification(message, type = "success") {
   notification.className = `${type} show`;
   setTimeout(() => {
     notification.classList.remove("show");
-  }, 3000);
+  }, 6000);
 }
 
 /* ===== Fetch & Render Books ===== */
@@ -54,11 +54,13 @@ function renderBooks(books) {
       <td title="${book.title}">${book.title}</td>
       <td title="${book.author}">${book.author}</td>
       <td title="${book.genre}">${book.genre}</td>
-      <td>${book.quantity ?? 0}</td>
-      <td>${(book.quantity ?? 0) > 0 ? "🟢 Available" : "🔴 Unavailable"}</td>
-      <td>
-        <button onclick="editBook('${book._id}', '${book.title}', '${book.author}', '${book.genre}', ${book.quantity ?? 0})">✏️ Edit</button>
+      <td>${book.quantity || 0}</td>
+      <td>${(book.quantity || 0) > 0 ? "🟢 Available" : "🔴 Unavailable"}</td>
+      <td class="actions-cell">
+        <button onclick="editBook('${book._id}', '${book.title}', '${book.author}', '${book.genre}', ${book.quantity || 0})">✏️ Edit</button>
         <button onclick="deleteBook('${book._id}')">🗑️ Delete</button>
+        <button onclick="borrowBook('${book._id}')">📉 Borrow</button>
+        <button onclick="returnBook('${book._id}')">🔁 Return</button>
       </td>
     `;
     booksTable.appendChild(row);
@@ -182,6 +184,100 @@ searchBox.addEventListener("input", (e) => {
     row.style.display = row.textContent.toLowerCase().includes(query) ? "" : "none";
   });
 });
+
+/* ===== Render Books with Quantity & Actions ===== */
+function renderBooks(books) {
+  booksTable.innerHTML = "";
+  books.forEach((book) => {
+    const qty = Number(book.quantity || 0);
+    const disableBorrow = qty <= 0;
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td title="${book.title}">${book.title}</td>
+      <td title="${book.author}">${book.author}</td>
+      <td title="${book.genre}">${book.genre}</td>
+      <td>${book.quantity || 0}</td>
+      <td>${(book.quantity || 0) > 0 ? "🟢 Available" : "🔴 Unavailable"}</td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn-edit" onclick="editBook('${book._id}', '${book.title}', '${book.author}', '${book.genre}', ${book.quantity || 0})">✏️ Edit</button>
+          <button class="btn-delete" onclick="deleteBook('${book._id}')">🗑️ Delete</button>
+          <button class="btn-borrow" onclick="borrowBook('${book._id}')" ${book.quantity === 0 ? "disabled" : ""}>📉 Borrow</button>
+          <button class="btn-return" onclick="returnBook('${book._id}')">🔁 Return</button>
+        </div>
+      </td>
+    `;
+    booksTable.appendChild(row);
+  });
+}
+
+// ===== Borrow / Return with confirmation =====
+let bookToBorrow = null;
+let bookToReturn = null;
+
+const borrowModal = document.getElementById("borrowModal");
+const cancelBorrow = document.getElementById("cancelBorrow");
+const confirmBorrow = document.getElementById("confirmBorrow");
+
+const returnModal = document.getElementById("returnModal");
+const cancelReturn = document.getElementById("cancelReturn");
+const confirmReturn = document.getElementById("confirmReturn");
+
+function borrowBook(id) {
+  bookToBorrow = id;
+  borrowModal.style.display = "flex";
+}
+
+function returnBook(id) {
+  bookToReturn = id;
+  returnModal.style.display = "flex";
+}
+
+// Cancel Borrow
+cancelBorrow.addEventListener("click", () => {
+  borrowModal.style.display = "none";
+  bookToBorrow = null;
+});
+
+// Confirm Borrow
+confirmBorrow.addEventListener("click", async () => {
+  if (!bookToBorrow) return;
+  try {
+    const res = await fetch(`${API_URL}/${bookToBorrow}/borrow`, { method: "PATCH" });
+    if (!res.ok) throw new Error("Borrow failed");
+    showNotification("📉 Borrowed 1 copy", "success");
+    fetchBooks();
+  } catch (err) {
+    showNotification("❌ Failed to borrow book", "error");
+  } finally {
+    borrowModal.style.display = "none";
+    bookToBorrow = null;
+  }
+});
+
+// Cancel Return
+cancelReturn.addEventListener("click", () => {
+  returnModal.style.display = "none";
+  bookToReturn = null;
+});
+
+// Confirm Return
+confirmReturn.addEventListener("click", async () => {
+  if (!bookToReturn) return;
+  try {
+    const res = await fetch(`${API_URL}/${bookToReturn}/return`, { method: "PATCH" });
+    if (!res.ok) throw new Error("Return failed");
+    showNotification("🔁 Returned 1 copy", "success");
+    fetchBooks();
+  } catch (err) {
+    showNotification("❌ Failed to return book", "error");
+  } finally {
+    returnModal.style.display = "none";
+    bookToReturn = null;
+  }
+});
+
 
 /* ===== Dark Mode ===== */
 darkToggle.addEventListener("click", () => {
