@@ -536,6 +536,47 @@ body.dark .modal-content {
   opacity: 0.9;
 }
 
+/* ===== Filter Buttons ===== */
+.filter-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 15px auto 25px auto;
+}
+
+.filter-btn {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, #6366f1, #4338ca);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(99,102,241,0.25);
+  transition: all 0.25s ease;
+}
+
+.filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99,102,241,0.35);
+}
+
+.filter-btn.active {
+  background: linear-gradient(135deg, #10b981, #059669); /* green for active */
+  box-shadow: 0 6px 16px rgba(16,185,129,0.35);
+}
+
+/* Dark Mode Styling */
+body.dark .filter-btn {
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  color: #f9fafb;
+}
+
+body.dark .filter-btn.active {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+}
+
 
 /* ===== Notifications ===== */
 #notification {

@@ -12,6 +12,10 @@ const editModal = document.getElementById("editModal");
 const closeModal = document.getElementById("closeModal");
 const editBookForm = document.getElementById("editBookForm");
 
+/* ===== Filter States ===== */
+let statusFilter = "all";        // all | online | offline
+let availabilityFilter = "all";  // all | available | unavailable
+
 /* ===== Notifications ===== */
 function showNotification(message, type = "success") {
   notification.textContent = message;
@@ -53,7 +57,23 @@ function updateStats(books) {
 /* ===== Render Books with Availability + Status ===== */
 function renderBooks(books) {
   booksTable.innerHTML = "";
-  books.forEach((book) => {
+
+  let filtered = books.filter((book) => {
+    const qty = Number(book.quantity || 0);
+    const isAvailable = qty > 0;
+
+    // Status filter
+    if (statusFilter === "online" && book.status !== "online") return false;
+    if (statusFilter === "offline" && book.status !== "offline") return false;
+
+    // Availability filter
+    if (availabilityFilter === "available" && !isAvailable) return false;
+    if (availabilityFilter === "unavailable" && isAvailable) return false;
+
+    return true;
+  });
+
+  filtered.forEach((book) => {
     const qty = Number(book.quantity ?? 0);
 
     const row = document.createElement("tr");
@@ -245,6 +265,34 @@ searchBox.addEventListener("input", (e) => {
     row.style.display = row.textContent.toLowerCase().includes(query) ? "" : "none";
   });
 });
+
+/* ===== Filter Toggles ===== */
+const filterStatusBtn = document.getElementById("filterStatus");
+const filterAvailabilityBtn = document.getElementById("filterAvailability");
+
+if (filterStatusBtn) {
+  filterStatusBtn.addEventListener("click", () => {
+    if (statusFilter === "all") statusFilter = "online";
+    else if (statusFilter === "online") statusFilter = "offline";
+    else statusFilter = "all";
+    filterStatusBtn.textContent = `Filter Status: ${capitalize(statusFilter)}`;
+    fetchBooks();
+  });
+}
+
+if (filterAvailabilityBtn) {
+  filterAvailabilityBtn.addEventListener("click", () => {
+    if (availabilityFilter === "all") availabilityFilter = "available";
+    else if (availabilityFilter === "available") availabilityFilter = "unavailable";
+    else availabilityFilter = "all";
+    filterAvailabilityBtn.textContent = `Filter Availability: ${capitalize(availabilityFilter)}`;
+    fetchBooks();
+  });
+}
+
+function capitalize(word) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
 
 // ===== Borrow / Return with confirmation =====
 let bookToBorrow = null;
