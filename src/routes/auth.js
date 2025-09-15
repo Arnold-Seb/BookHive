@@ -57,7 +57,7 @@ router.get("/signup", (req, res) => {
   res.render("auth/signup");
 });
 
-// ...existing code...
+
 
 
 
