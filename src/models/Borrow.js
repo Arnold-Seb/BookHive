@@ -6,6 +6,7 @@ const borrowSchema = new mongoose.Schema(
     studentName: { type: String, required: true },
     book: { type: mongoose.Schema.Types.ObjectId, ref: "Book", required: true },
     bookTitle: { type: String, required: true },
+    quantity: { type: Number, default: 1 }, // <-- added
     borrowedAt: { type: Date, default: Date.now }
   },
   { timestamps: true }

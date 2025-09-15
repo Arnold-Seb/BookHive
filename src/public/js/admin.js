@@ -34,17 +34,31 @@ async function fetchBooks() {
     // Apply filters if any are active
     const filteredBooks = filterBooks(books);
     renderBooks(filteredBooks);
-    updateStats(books); // Still update stats with all books, not filtered ones
+    updateStats(books); // total & available
+    await fetchBorrowedTotal(); // borrowed from Borrow model
   } catch (error) {
     console.error("Error fetching books:", error);
     showNotification("❌ Server Timeout", "error");
   }
 }
 
+/* ===== Fetch Borrowed Total ===== */
+async function fetchBorrowedTotal() {
+  try {
+    const res = await fetch("/api/borrow/total");
+    if (!res.ok) throw new Error("Failed to fetch borrowed data");
+    const data = await res.json();
+    document.getElementById("borrowedBooks").textContent = data.totalBorrowed;
+  } catch (err) {
+    console.error("Error fetching borrowed data:", err);
+    document.getElementById("borrowedBooks").textContent = "0";
+  }
+}
+
 // Apply filters to books
 function filterBooks(books) {
   if (!filterTitle || !filterAuthor || !filterQuantity) {
-    return books; // Return early if filter elements aren't initialized
+    return books;
   }
   
   const titleFilter = filterTitle.value.toLowerCase();
@@ -52,17 +66,8 @@ function filterBooks(books) {
   const quantityFilter = filterQuantity.value;
   
   return books.filter(book => {
-    // Title filter
-    if (titleFilter && !book.title.toLowerCase().includes(titleFilter)) {
-      return false;
-    }
-    
-    // Author filter
-    if (authorFilter && !book.author.toLowerCase().includes(authorFilter)) {
-      return false;
-    }
-    
-    // Quantity filter
+    if (titleFilter && !book.title.toLowerCase().includes(titleFilter)) return false;
+    if (authorFilter && !book.author.toLowerCase().includes(authorFilter)) return false;
     if (quantityFilter) {
       const quantity = book.quantity || 0;
       switch(quantityFilter) {
@@ -77,20 +82,17 @@ function filterBooks(books) {
           break;
       }
     }
-    
     return true;
   });
 }
 
-// Update Dashboard Stats (📌 now includes quantity)
+// Update Dashboard Stats (total & available only; borrowed fetched separately)
 function updateStats(books) {
   const total = books.reduce((sum, b) => sum + (b.quantity || 0), 0);
   const available = books.filter(b => (b.quantity || 0) > 0).length;
-  const borrowed = books.length - available;
 
   document.getElementById("totalBooks").textContent = total;
   document.getElementById("availableBooks").textContent = available;
-  document.getElementById("borrowedBooks").textContent = borrowed;
 }
 
 function renderBooks(books) {
@@ -111,11 +113,9 @@ function renderBooks(books) {
     booksTable.appendChild(row);
   });
   
-  // Add event listeners to the edit and delete buttons
   attachEditDeleteListeners();
 }
 
-// Attach event listeners to edit and delete buttons
 function attachEditDeleteListeners() {
   // Edit buttons
   const editButtons = document.querySelectorAll('.edit-btn');
@@ -148,7 +148,7 @@ form.addEventListener("submit", async (e) => {
     title: document.getElementById("title").value,
     author: document.getElementById("author").value,
     genre: document.getElementById("genre").value,
-    quantity: Number.isFinite(qVal) ? qVal : 1, // ✅ preserve 0
+    quantity: Number.isFinite(qVal) ? qVal : 1,
   };
   try {
     const res = await fetch(API_URL, {
@@ -176,11 +176,9 @@ function editBook(id, title, author, genre, quantity) {
   editModal.style.display = "flex";
 }
 
-/* Close modal */
 closeModal.onclick = () => (editModal.style.display = "none");
 window.onclick = (e) => { if (e.target === editModal) editModal.style.display = "none"; };
 
-/* Submit edit form */
 editBookForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = document.getElementById("editId").value;
@@ -189,7 +187,7 @@ editBookForm.addEventListener("submit", async (e) => {
     title: document.getElementById("editTitle").value,
     author: document.getElementById("editAuthor").value,
     genre: document.getElementById("editGenre").value,
-    quantity: Number.isFinite(qVal) ? qVal : 1, // ✅ preserve 0
+    quantity: Number.isFinite(qVal) ? qVal : 1,
   };
   try {
     const res = await fetch(`${API_URL}/${id}`, {
@@ -218,16 +216,13 @@ function deleteBook(id) {
   deleteModal.style.display = "flex";
 }
 
-// Cancel
 cancelDelete.addEventListener("click", () => {
   deleteModal.style.display = "none";
   bookToDelete = null;
 });
 
-// Confirm
 confirmDelete.addEventListener("click", async () => {
   if (!bookToDelete) return;
-
   try {
     const res = await fetch(`${API_URL}/${bookToDelete}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to delete book");
@@ -242,7 +237,6 @@ confirmDelete.addEventListener("click", async () => {
   }
 });
 
-// Close modal if clicked outside
 window.addEventListener("click", (e) => {
   if (e.target === deleteModal) {
     deleteModal.style.display = "none";
@@ -263,8 +257,7 @@ darkToggle.addEventListener("click", () => {
   document.body.classList.toggle("dark");
 });
 
-/* Filtering System */
-// Add filter controls to the UI
+/* ===== Filtering System ===== */
 function addFilterControls() {
   const tableSection = document.querySelector('.table-section');
   const filterControls = document.createElement('div');
@@ -284,24 +277,19 @@ function addFilterControls() {
     </div>
   `;
   
-  // Insert after the search box
   const searchBox = document.getElementById('searchBox');
   tableSection.insertBefore(filterControls, searchBox.nextSibling);
   
-  // Initialize filter elements
   filterTitle = document.getElementById('filterTitle');
   filterAuthor = document.getElementById('filterAuthor');
   filterQuantity = document.getElementById('filterQuantity');
   clearFilters = document.getElementById('clearFilters');
 }
 
-// Add event listeners for filters
 function setupFilterEvents() {
   filterTitle.addEventListener('input', fetchBooks);
   filterAuthor.addEventListener('input', fetchBooks);
   filterQuantity.addEventListener('change', fetchBooks);
-  
-  // Clear filters button
   clearFilters.addEventListener('click', () => {
     filterTitle.value = '';
     filterAuthor.value = '';
@@ -317,5 +305,4 @@ function initializeApp() {
   fetchBooks();
 }
 
-// Start the application
 initializeApp();
