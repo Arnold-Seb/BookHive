@@ -1,1 +1,1 @@
-# BookHive Boilerplate\n\nSetup: npm i, copy .env, run npm run dev\n
+# BookHive
