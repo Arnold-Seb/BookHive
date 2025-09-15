@@ -37,4 +37,5 @@ bookSchema.virtual("available").get(function () {
   return this.quantity > 0;
 });
 
-export default mongoose.model("Book", bookSchema);
+export default mongoose.models.Book || mongoose.model("Book", bookSchema);
+

@@ -13,6 +13,11 @@ import { connectDB } from "./config/db.js";
 import bookRoutes from "./routes/books.js";
 import authRoutes from "./routes/auth.js";
 
+
+import borrowRoutes from "./routes/borrow.js";
+// ...
+
+
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,6 +50,7 @@ app.set("layout", false);
 // ---------- ROUTES ----------
 app.use("/auth", authRoutes);
 app.use("/api/books", bookRoutes);
+app.use("/api/borrow", borrowRoutes);
 
 app.get("/", (_req, res) => res.redirect("/auth/login"));
 
