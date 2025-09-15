@@ -21,6 +21,9 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from "public" folder
 app.use(express.static(path.join(__dirname, "public")));
 
+// Serve uploaded PDFs
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 // API routes
 app.use("/api/books", bookRoutes);
 

@@ -141,6 +141,48 @@ form button:hover {
   box-shadow: 0 6px 18px rgba(99,102,241,0.35);
 }
 
+/* ===== Online/Offline Dropdown Styling ===== */
+select#status,
+select#editStatus {
+  appearance: none;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  border: 2px solid #9ca3af;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+select#status:hover,
+select#editStatus:hover {
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #f9fafb, #e0e7ff);
+}
+
+select#status:focus,
+select#editStatus:focus {
+  outline: none;
+  border-color: #1d4ed8;
+  background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
+}
+
+/* Style options */
+select#status option[value="online"],
+select#editStatus option[value="online"] {
+  color: #10b981; /* green */
+  font-weight: 600;
+}
+
+select#status option[value="offline"],
+select#editStatus option[value="offline"] {
+  color: #ef4444; /* red */
+  font-weight: 600;
+}
+
 /* ===== Search Box ===== */
 #searchBox {
   display: block;

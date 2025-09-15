@@ -7,7 +7,14 @@ const bookSchema = new mongoose.Schema(
     genre:   { type: String, required: true, trim: true },
     quantity:{ type: Number, required: true, min: 0, default: 1 },
 
-    // helper fields (not required anymore)
+    // PDF stored as base64
+    pdfData: { type: String, default: null }, 
+    pdfName: { type: String, default: null }, 
+
+    // status field
+    status: { type: String, enum: ["online", "offline"], default: "offline" },
+
+    // helper fields
     titleLower:  { type: String },
     authorLower: { type: String },
     genreLower:  { type: String }
@@ -15,7 +22,7 @@ const bookSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ✅ before save
+// before save
 bookSchema.pre("save", function (next) {
   if (this.title)  this.titleLower  = this.title.toLowerCase();
   if (this.author) this.authorLower = this.author.toLowerCase();
@@ -23,7 +30,7 @@ bookSchema.pre("save", function (next) {
   next();
 });
 
-// ✅ before update (so editing title/author/genre also refreshes lower fields)
+// before update
 bookSchema.pre("findOneAndUpdate", function (next) {
   const update = this.getUpdate();
   if (update.title)  update.titleLower  = update.title.toLowerCase();

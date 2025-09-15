@@ -10,71 +10,109 @@ export const getBooks = async (req, res) => {
   }
 };
 
-// Add new book (✅ merge if duplicate, case-insensitive)
+// Add new book
 export const addBook = async (req, res) => {
   try {
-    const { title, author, genre } = req.body;
-    const quantity = Number(req.body.quantity) ?? 1;
+    const title = req.body.title ? req.body.title.trim() : "";
+    const author = req.body.author ? req.body.author.trim() : "";
+    const genre = req.body.genre ? req.body.genre.trim() : "";
 
-    // check for existing book (ONLY by title, author, genre)
+    // ✅ allow 0 as valid quantity
+    const quantity =
+      req.body.quantity !== undefined && req.body.quantity !== ""
+        ? Number(req.body.quantity)
+        : 0;
+
+    if (!title || !author || !genre) {
+      return res
+        .status(400)
+        .json({ error: "Title, author, and genre are required" });
+    }
+
+    // check for duplicate
     let existingBook = await Book.findOne({
-      titleLower: title.trim().toLowerCase(),
-      authorLower: author.trim().toLowerCase(),
-      genreLower: genre.trim().toLowerCase(),
+      titleLower: title.toLowerCase(),
+      authorLower: author.toLowerCase(),
+      genreLower: genre.toLowerCase(),
     });
 
     if (existingBook) {
-      // increase quantity
       existingBook.quantity += quantity;
       await existingBook.save();
       return res.status(200).json(existingBook);
     }
 
-    // else, create new book
+    // Handle PDF (base64)
+    const pdfData = req.file ? req.file.buffer.toString("base64") : null;
+    const pdfName = req.file ? req.file.originalname : null;
+
+    // If a PDF is uploaded, mark book online automatically
+    const status = pdfData ? "online" : req.body.status || "offline";
+
     const newBook = new Book({
-      title: title.trim(),
-      author: author.trim(),
-      genre: genre.trim(),
+      title,
+      author,
+      genre,
       quantity,
+      pdfData,
+      pdfName,
+      status,
     });
 
     await newBook.save();
     res.status(201).json(newBook);
-
   } catch (err) {
     console.error(err);
     res.status(400).json({ error: "Failed to add book" });
   }
 };
 
-// Update book (✅ still works with lowercase fields)
+// Update book
 export const updateBook = async (req, res) => {
   try {
-    const payload = {
-      title: req.body.title,
-      author: req.body.author,
-      genre: req.body.genre,
-    };
+    const payload = {};
 
+    if (req.body.title) {
+      payload.title = req.body.title.trim();
+      payload.titleLower = payload.title.toLowerCase();
+    }
+    if (req.body.author) {
+      payload.author = req.body.author.trim();
+      payload.authorLower = payload.author.toLowerCase();
+    }
+    if (req.body.genre) {
+      payload.genre = req.body.genre.trim();
+      payload.genreLower = payload.genre.toLowerCase();
+    }
+
+    // ✅ allow 0 as valid update
     if (req.body.quantity !== undefined) {
       payload.quantity = Number(req.body.quantity);
     }
 
-    if (req.body.title)  payload.titleLower  = req.body.title.trim().toLowerCase();
-    if (req.body.author) payload.authorLower = req.body.author.trim().toLowerCase();
-    if (req.body.genre)  payload.genreLower  = req.body.genre.trim().toLowerCase();
+    if (req.body.status) {
+      payload.status = req.body.status;
+    }
+
+    if (req.file) {
+      payload.pdfData = req.file.buffer.toString("base64");
+      payload.pdfName = req.file.originalname;
+      payload.status = "online"; // auto-online if PDF uploaded
+    }
 
     const book = await Book.findByIdAndUpdate(req.params.id, payload, {
       new: true,
-      runValidators: true
+      runValidators: true,
     });
+
+    if (!book) return res.status(404).json({ error: "Book not found" });
 
     res.json(book);
   } catch (err) {
+    console.error(err);
     res.status(400).json({ error: "Failed to update book" });
   }
 };
-
 
 // Delete book
 export const deleteBook = async (req, res) => {
@@ -86,8 +124,7 @@ export const deleteBook = async (req, res) => {
   }
 };
 
-
-// Borrow book (decrease quantity)
+// Borrow book
 export const borrowBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
@@ -105,7 +142,7 @@ export const borrowBook = async (req, res) => {
   }
 };
 
-// Return book (increase quantity)
+// Return book
 export const returnBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);

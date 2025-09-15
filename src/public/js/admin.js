@@ -35,53 +35,107 @@ async function fetchBooks() {
   }
 }
 
-// Update Dashboard Stats (📌 now includes quantity)
+// Update Dashboard Stats
 function updateStats(books) {
-  const total = books.reduce((sum, b) => sum + (b.quantity || 0), 0);
+  const total = books.length;
   const available = books.filter(b => (b.quantity || 0) > 0).length;
-  const borrowed = books.length - available;
+  const borrowed = books.filter(b => (b.quantity || 0) === 0).length;
+  const online = books.filter(b => b.status === "online").length;
+  const offline = books.filter(b => b.status === "offline").length;
 
   document.getElementById("totalBooks").textContent = total;
   document.getElementById("availableBooks").textContent = available;
   document.getElementById("borrowedBooks").textContent = borrowed;
+  document.getElementById("onlineBooks").textContent = online;
+  document.getElementById("offlineBooks").textContent = offline;
 }
 
+/* ===== Render Books with Availability + Status ===== */
 function renderBooks(books) {
   booksTable.innerHTML = "";
   books.forEach((book) => {
+    const qty = Number(book.quantity ?? 0);
+
     const row = document.createElement("tr");
     row.innerHTML = `
       <td title="${book.title}">${book.title}</td>
       <td title="${book.author}">${book.author}</td>
       <td title="${book.genre}">${book.genre}</td>
-      <td>${book.quantity || 0}</td>
-      <td>${(book.quantity || 0) > 0 ? "🟢 Available" : "🔴 Unavailable"}</td>
-      <td class="actions-cell">
-        <button onclick="editBook('${book._id}', '${book.title}', '${book.author}', '${book.genre}', ${book.quantity || 0})">✏️ Edit</button>
-        <button onclick="deleteBook('${book._id}')">🗑️ Delete</button>
-        <button onclick="borrowBook('${book._id}')">📉 Borrow</button>
-        <button onclick="returnBook('${book._id}')">🔁 Return</button>
+      <td>${qty}</td>
+      <td>${qty > 0 ? "🟢 Available" : "🔴 Unavailable"}</td>
+      <td>
+        ${
+          book.pdfData
+            ? `<button class="btn-pdf" onclick="openPdf('${book._id}')">📄 View PDF</button>`
+            : "No PDF"
+        }
+      </td>
+      <td>${book.status || "offline"}</td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn-edit" 
+            onclick="editBook('${book._id}', '${book.title}', '${book.author}', '${book.genre}', ${qty}, '${book.status || "offline"}')">✏️ Edit</button>
+          <button class="btn-delete" onclick="deleteBook('${book._id}')">🗑️ Delete</button>
+          <button class="btn-borrow" onclick="borrowBook('${book._id}')" ${qty === 0 ? "disabled" : ""}>📉 Borrow</button>
+          <button class="btn-return" onclick="returnBook('${book._id}')">🔁 Return</button>
+        </div>
       </td>
     `;
     booksTable.appendChild(row);
   });
 }
 
+/* ===== PDF Modal ===== */
+const pdfModal = document.createElement("div");
+pdfModal.id = "pdfModal";
+pdfModal.className = "modal";
+pdfModal.innerHTML = `
+  <div class="modal-content glass pdf-modal">
+    <span class="close" id="closePdfModal">&times;</span>
+    <iframe id="pdfViewer" width="100%" height="500px"></iframe>
+  </div>
+`;
+document.body.appendChild(pdfModal);
+
+function openPdf(bookId) {
+  const viewer = document.getElementById("pdfViewer");
+  viewer.src = `/api/books/${bookId}/pdf`;
+  pdfModal.style.display = "flex";
+}
+
+document.getElementById("closePdfModal").onclick = () => {
+  pdfModal.style.display = "none";
+  document.getElementById("pdfViewer").src = "";
+};
+
+window.onclick = (e) => {
+  if (e.target === pdfModal) {
+    pdfModal.style.display = "none";
+    document.getElementById("pdfViewer").src = "";
+  }
+};
+
 /* ===== Add Book ===== */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+
+  const formData = new FormData();
+  formData.append("title", document.getElementById("title").value);
+  formData.append("author", document.getElementById("author").value);
+  formData.append("genre", document.getElementById("genre").value);
+
   const qVal = Number(document.getElementById("quantity").value);
-  const newBook = {
-    title: document.getElementById("title").value,
-    author: document.getElementById("author").value,
-    genre: document.getElementById("genre").value,
-    quantity: Number.isFinite(qVal) ? qVal : 1, // ✅ preserve 0
-  };
+  formData.append("quantity", Number.isFinite(qVal) ? qVal : 0); // ✅ allow 0
+
+  formData.append("status", document.getElementById("status").value);
+
+  const pdfFile = document.getElementById("pdfFile").files[0];
+  if (pdfFile) formData.append("pdfFile", pdfFile);
+
   try {
     const res = await fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newBook),
+      body: formData,
     });
     if (!res.ok) throw new Error("Failed to add book");
     form.reset();
@@ -94,12 +148,13 @@ form.addEventListener("submit", async (e) => {
 });
 
 /* ===== Edit Book ===== */
-function editBook(id, title, author, genre, quantity) {
+function editBook(id, title, author, genre, quantity, status) {
   document.getElementById("editId").value = id;
   document.getElementById("editTitle").value = title;
   document.getElementById("editAuthor").value = author;
   document.getElementById("editGenre").value = genre;
   document.getElementById("editQuantity").value = quantity;
+  document.getElementById("editStatus").value = status;
   editModal.style.display = "flex";
 }
 
@@ -111,18 +166,24 @@ window.onclick = (e) => { if (e.target === editModal) editModal.style.display = 
 editBookForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = document.getElementById("editId").value;
+
+  const formData = new FormData();
+  formData.append("title", document.getElementById("editTitle").value);
+  formData.append("author", document.getElementById("editAuthor").value);
+  formData.append("genre", document.getElementById("editGenre").value);
+
   const qVal = Number(document.getElementById("editQuantity").value);
-  const updatedBook = {
-    title: document.getElementById("editTitle").value,
-    author: document.getElementById("editAuthor").value,
-    genre: document.getElementById("editGenre").value,
-    quantity: Number.isFinite(qVal) ? qVal : 1, // ✅ preserve 0
-  };
+  formData.append("quantity", Number.isFinite(qVal) ? qVal : 0); // ✅ allow 0
+
+  formData.append("status", document.getElementById("editStatus").value);
+
+  const pdfFile = document.getElementById("editPdf").files[0];
+  if (pdfFile) formData.append("pdfFile", pdfFile);
+
   try {
     const res = await fetch(`${API_URL}/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedBook),
+      body: formData,
     });
     if (!res.ok) throw new Error("Failed to update book");
     fetchBooks();
@@ -184,33 +245,6 @@ searchBox.addEventListener("input", (e) => {
     row.style.display = row.textContent.toLowerCase().includes(query) ? "" : "none";
   });
 });
-
-/* ===== Render Books with Quantity & Actions ===== */
-function renderBooks(books) {
-  booksTable.innerHTML = "";
-  books.forEach((book) => {
-    const qty = Number(book.quantity || 0);
-    const disableBorrow = qty <= 0;
-
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td title="${book.title}">${book.title}</td>
-      <td title="${book.author}">${book.author}</td>
-      <td title="${book.genre}">${book.genre}</td>
-      <td>${book.quantity || 0}</td>
-      <td>${(book.quantity || 0) > 0 ? "🟢 Available" : "🔴 Unavailable"}</td>
-      <td>
-        <div class="actions-cell">
-          <button class="btn-edit" onclick="editBook('${book._id}', '${book.title}', '${book.author}', '${book.genre}', ${book.quantity || 0})">✏️ Edit</button>
-          <button class="btn-delete" onclick="deleteBook('${book._id}')">🗑️ Delete</button>
-          <button class="btn-borrow" onclick="borrowBook('${book._id}')" ${book.quantity === 0 ? "disabled" : ""}>📉 Borrow</button>
-          <button class="btn-return" onclick="returnBook('${book._id}')">🔁 Return</button>
-        </div>
-      </td>
-    `;
-    booksTable.appendChild(row);
-  });
-}
 
 // ===== Borrow / Return with confirmation =====
 let bookToBorrow = null;
@@ -277,7 +311,6 @@ confirmReturn.addEventListener("click", async () => {
     bookToReturn = null;
   }
 });
-
 
 /* ===== Dark Mode ===== */
 darkToggle.addEventListener("click", () => {

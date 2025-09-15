@@ -33,16 +33,32 @@
         <h3>❌ Borrowed</h3>
         <p id="borrowedBooks">0</p>
       </div>
+      <div class="stat-card online">
+        <h3>🌐 Online</h3>
+        <p id="onlineBooks">0</p>
+      </div>
+      <div class="stat-card offline">
+        <h3>📕 Offline</h3>
+        <p id="offlineBooks">0</p>
+      </div>
     </section>
+
     <!-- Add Book Form -->
     <section class="form-section glass">
       <h2>Add a New Book</h2>
-      <form id="addBookForm">
+      <form id="addBookForm" enctype="multipart/form-data">
         <input type="text" id="title" placeholder="Book Title" required />
         <input type="text" id="author" placeholder="Author" required />
         <input type="text" id="genre" placeholder="Genre" required />
-        <!--Quantity field -->
-        <input type="number" id="quantity" placeholder="Quantity" min="1" required />
+        <!-- Quantity -->
+        <input type="number" id="quantity" placeholder="Quantity" min="0" required />
+        <!-- PDF Upload -->
+        <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" />
+        <!-- Status Dropdown -->
+        <select id="status" name="status">
+          <option value="offline">Offline</option>
+          <option value="online">Online</option>
+        </select>
         <button type="submit">➕ Add Book</button>
       </form>
     </section>
@@ -58,6 +74,8 @@
             <th>Author</th>
             <th>Genre</th>
             <th>Quantity</th>
+            <th>Availability</th>
+            <th>PDF</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -72,7 +90,7 @@
     <div class="modal-content glass">
       <span class="close" id="closeModal">&times;</span>
       <h2>Edit Book</h2>
-      <form id="editBookForm">
+      <form id="editBookForm" enctype="multipart/form-data">
         <input type="hidden" id="editId" />
         <label for="Book Title">Book Title:</label>
         <input type="text" id="editTitle" placeholder="Book Title" required />
@@ -80,9 +98,17 @@
         <input type="text" id="editAuthor" placeholder="Author" required />
         <label for="Genre">Genre:</label>
         <input type="text" id="editGenre" placeholder="Genre" required />
-        <!--Quantity field in modal -->
         <label for="Quantity">Quantity:</label>
         <input type="number" id="editQuantity" placeholder="Quantity" min="0" required />
+        <!-- PDF Upload -->
+        <label for="editPdf">Upload PDF:</label>
+        <input type="file" id="editPdf" name="pdfFile" accept="application/pdf" />
+        <!-- Status Dropdown -->
+        <label for="editStatus">Status:</label>
+        <select id="editStatus" name="status">
+          <option value="offline">Offline</option>
+          <option value="online">Online</option>
+        </select>
         <button type="submit">💾 Save Changes</button>
       </form>
     </div>
@@ -123,7 +149,6 @@
       </div>
     </div>
   </div>
-
 
   <footer>
     <p>BookHive © 2025 | Admin Panel</p>
