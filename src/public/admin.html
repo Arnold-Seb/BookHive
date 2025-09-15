@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BookHive Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+  <header>
+    <h1>📚 BookHive Admin Dashboard</h1>
+    <label class="switch">
+      <input type="checkbox" id="darkToggle">
+      <span class="slider"></span>
+    </label>
+  </header>
+
+  <!-- Notifications -->
+  <div id="notification"></div>
+
+  <main>
+    <!-- Dashboard Stats -->
+    <section class="stats-section">
+      <div class="stat-card total">
+        <h3>📚 Total Books</h3>
+        <p id="totalBooks">0</p>
+      </div>
+      <div class="stat-card available">
+        <h3>✅ Available</h3>
+        <p id="availableBooks">0</p>
+      </div>
+      <div class="stat-card borrowed">
+        <h3>❌ Borrowed</h3>
+        <p id="borrowedBooks">0</p>
+      </div>
+    </section>
+    <!-- Add Book Form -->
+    <section class="form-section glass">
+      <h2>Add a New Book</h2>
+      <form id="addBookForm">
+        <input type="text" id="title" placeholder="Book Title" required />
+        <input type="text" id="author" placeholder="Author" required />
+        <input type="text" id="genre" placeholder="Genre" required />
+        <!--Quantity field -->
+        <input type="number" id="quantity" placeholder="Quantity" min="1" required />
+        <button type="submit">➕ Add Book</button>
+      </form>
+    </section>
+
+    <!-- Books Table -->
+    <section class="table-section glass">
+      <h2>Books Collection</h2>
+      <input type="text" id="searchBox" placeholder="🔍 Search books..." />
+      <table id="booksTable">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Genre</th>
+            <th>Quantity</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Edit Book Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content glass">
+      <span class="close" id="closeModal">&times;</span>
+      <h2>Edit Book</h2>
+      <form id="editBookForm">
+        <input type="hidden" id="editId" />
+        <label for="Book Title">Book Title:</label>
+        <input type="text" id="editTitle" placeholder="Book Title" required />
+        <label for="Author">Author:</label>
+        <input type="text" id="editAuthor" placeholder="Author" required />
+        <label for="Genre">Genre:</label>
+        <input type="text" id="editGenre" placeholder="Genre" required />
+        <!--Quantity field in modal -->
+        <label for="Quantity">Quantity:</label>
+        <input type="number" id="editQuantity" placeholder="Quantity" min="0" required />
+        <button type="submit">💾 Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content glass">
+      <h2>Confirm Delete</h2>
+      <p>Are you sure you want to delete this book?</p>
+      <div class="modal-actions">
+        <button id="cancelDelete">Cancel</button>
+        <button id="confirmDelete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Borrow Confirmation Modal -->
+  <div id="borrowModal" class="modal">
+    <div class="modal-content glass">
+      <h2>Confirm Borrow</h2>
+      <p>Are you sure you want to borrow this book?</p>
+      <div class="modal-actions">
+        <button id="cancelBorrow">Cancel</button>
+        <button id="confirmBorrow">Borrow</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Return Confirmation Modal -->
+  <div id="returnModal" class="modal">
+    <div class="modal-content glass">
+      <h2>Confirm Return</h2>
+      <p>Are you sure you want to return this book?</p>
+      <div class="modal-actions">
+        <button id="cancelReturn">Cancel</button>
+        <button id="confirmReturn">Return</button>
+      </div>
+    </div>
+  </div>
+
+
+  <footer>
+    <p>BookHive © 2025 | Admin Panel</p>
+  </footer>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>
