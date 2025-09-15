@@ -15,7 +15,7 @@
 </head>
 <body>
   <header>
-    <h1>BookHive</h1>
+    <h1>📚 BookHive</h1>
     <div class="header-actions">
       <form action="/auth/logout" method="post" style="display:inline-block; margin-left:12px;">
         <button type="submit" class="logout-btn">Logout</button>
@@ -34,7 +34,7 @@
     <form onsubmit="doSearch();return false;" style="justify-content:center;">
       <button type="submit">Search</button>
       <% if (user && user.role === 'admin') { %>
-        <a href="/books/new" style="display:inline-block; text-decoration:none; margin-left:10px;">
+        <a href="/admin" style="display:inline-block; text-decoration:none; margin-left:10px;">
           <button type="button">Add Book</button>
         </a>
       <% } %>
