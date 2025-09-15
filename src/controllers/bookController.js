@@ -29,11 +29,16 @@ export const addBook = async (req, res) => {
         .json({ error: "Title, author, and genre are required" });
     }
 
-    // check for duplicate
+    // Normalize fields for duplicate check
+    const titleLower = title.toLowerCase();
+    const authorLower = author.toLowerCase();
+    const genreLower = genre.toLowerCase();
+
+    // 🔑 check for duplicate by normalized fields
     let existingBook = await Book.findOne({
-      titleLower: title.toLowerCase(),
-      authorLower: author.toLowerCase(),
-      genreLower: genre.toLowerCase(),
+      titleLower,
+      authorLower,
+      genreLower,
     });
 
     if (existingBook) {
@@ -49,10 +54,14 @@ export const addBook = async (req, res) => {
     // If a PDF is uploaded, mark book online automatically
     const status = pdfData ? "online" : req.body.status || "offline";
 
+    // 🔑 Explicitly set normalized fields when creating new book
     const newBook = new Book({
       title,
       author,
       genre,
+      titleLower,
+      authorLower,
+      genreLower,
       quantity,
       pdfData,
       pdfName,
@@ -62,7 +71,7 @@ export const addBook = async (req, res) => {
     await newBook.save();
     res.status(201).json(newBook);
   } catch (err) {
-    console.error(err);
+    console.error("Error in addBook:", err);
     res.status(400).json({ error: "Failed to add book" });
   }
 };
@@ -109,7 +118,7 @@ export const updateBook = async (req, res) => {
 
     res.json(book);
   } catch (err) {
-    console.error(err);
+    console.error("Error in updateBook:", err);
     res.status(400).json({ error: "Failed to update book" });
   }
 };

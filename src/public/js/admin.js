@@ -39,11 +39,16 @@ async function fetchBooks() {
   }
 }
 
-// Update Dashboard Stats
+// Update Dashboard Stats ✅ fixed
 function updateStats(books) {
   const total = books.length;
-  const available = books.filter(b => (b.quantity || 0) > 0).length;
-  const borrowed = books.filter(b => (b.quantity || 0) === 0).length;
+
+  const available = books.filter(b => {
+    if (b.status === "online") return true;
+    return (b.quantity || 0) > 0;
+  }).length;
+
+  const borrowed = total - available;
   const online = books.filter(b => b.status === "online").length;
   const offline = books.filter(b => b.status === "offline").length;
 
@@ -60,7 +65,8 @@ function renderBooks(books) {
 
   let filtered = books.filter((book) => {
     const qty = Number(book.quantity || 0);
-    const isAvailable = qty > 0;
+    const isOnline = book.status === "online";
+    const isAvailable = isOnline || qty > 0;
 
     // Status filter
     if (statusFilter === "online" && book.status !== "online") return false;
@@ -75,6 +81,14 @@ function renderBooks(books) {
 
   filtered.forEach((book) => {
     const qty = Number(book.quantity ?? 0);
+    const isOnline = book.status === "online";
+
+    // ✅ availability logic
+    const availabilityText = isOnline
+      ? "🟢 Available"
+      : qty > 0
+      ? "🟢 Available"
+      : "🔴 Unavailable";
 
     const row = document.createElement("tr");
     row.innerHTML = `
@@ -82,7 +96,7 @@ function renderBooks(books) {
       <td title="${book.author}">${book.author}</td>
       <td title="${book.genre}">${book.genre}</td>
       <td>${qty}</td>
-      <td>${qty > 0 ? "🟢 Available" : "🔴 Unavailable"}</td>
+      <td>${availabilityText}</td>
       <td>
         ${
           book.pdfData
@@ -96,7 +110,7 @@ function renderBooks(books) {
           <button class="btn-edit" 
             onclick="editBook('${book._id}', '${book.title}', '${book.author}', '${book.genre}', ${qty}, '${book.status || "offline"}')">✏️ Edit</button>
           <button class="btn-delete" onclick="deleteBook('${book._id}')">🗑️ Delete</button>
-          <button class="btn-borrow" onclick="borrowBook('${book._id}')" ${qty === 0 ? "disabled" : ""}>📉 Borrow</button>
+          <button class="btn-borrow" onclick="borrowBook('${book._id}')" ${(qty === 0 && !isOnline) ? "disabled" : ""}>📉 Borrow</button>
           <button class="btn-return" onclick="returnBook('${book._id}')">🔁 Return</button>
         </div>
       </td>
