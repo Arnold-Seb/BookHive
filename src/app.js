@@ -1,4 +1,5 @@
-﻿import express from "express";
+﻿// app.js
+import express from "express";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -10,7 +11,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Required to use __dirname with ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -18,28 +18,28 @@ const __dirname = path.dirname(__filename);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from "public" folder
+// Static files
 app.use(express.static(path.join(__dirname, "public")));
-
-// Serve uploaded PDFs
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// API routes
+// Routes
 app.use("/api/books", bookRoutes);
-
-// Root route
 app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
-// Connect DB and start server
-connectDB(process.env.MONGODB_URI)
-  .then(() => {
-    app.listen(PORT, () =>
-      console.log(`🚀 BookHive running at http://localhost:${PORT}`)
-    );
-  })
-  .catch((err) => {
-    console.error("❌ DB init failed:", err);
-    process.exit(1);
-  });
+// ✅ Only start server if not in test mode
+if (process.env.NODE_ENV !== "test") {
+  connectDB(process.env.MONGODB_URI)
+    .then(() => {
+      app.listen(PORT, () =>
+        console.log(`🚀 BookHive running at http://localhost:${PORT}`)
+      );
+    })
+    .catch((err) => {
+      console.error("❌ DB init failed:", err);
+      process.exit(1);
+    });
+}
+
+export default app; // ✅ Export for Supertest

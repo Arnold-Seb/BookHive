@@ -17,7 +17,7 @@ export const addBook = async (req, res) => {
     const author = req.body.author ? req.body.author.trim() : "";
     const genre = req.body.genre ? req.body.genre.trim() : "";
 
-    // ✅ allow 0 as valid quantity
+    // allow 0 as valid quantity
     const quantity =
       req.body.quantity !== undefined && req.body.quantity !== ""
         ? Number(req.body.quantity)
@@ -54,7 +54,7 @@ export const addBook = async (req, res) => {
     // If a PDF is uploaded, mark book online automatically
     const status = pdfData ? "online" : req.body.status || "offline";
 
-    // 🔑 Explicitly set normalized fields when creating new book
+    // Explicitly set normalized fields when creating new book
     const newBook = new Book({
       title,
       author,
