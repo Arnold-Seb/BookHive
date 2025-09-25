@@ -1,1 +1,56 @@
-body { background: #fafafa; }
+/* --- Palette --- */
+:root{
+  --leaf:#2E7D32;     /* primary buttons */
+  --forest:#1B5E20;   /* nav/footer */
+  --bark:#5A4039;     /* headings/text (slightly darker) */
+  --beige:#F5F0E6;    /* page bg */
+  --sun:#FBC02D;      /* accents/hover */
+  --white:#fff;
+}
+
+/* Layout */
+.bh-root{ display:flex; min-height:100vh; flex-direction:column; background:var(--beige); color:var(--bark); }
+.bh-main{ flex:1 0 auto; max-width:980px; }
+.section{ padding:2rem 0; }
+
+/* Typography */
+h1,h2,h3,h4,h5{ color:var(--bark); letter-spacing:.2px; }
+
+/* Navbar */
+nav, .page-footer{ background:var(--forest) !important; }
+nav .brand-logo{ font-weight:700; }
+nav a{ color:var(--white) !important; opacity:.95; }
+nav a:hover{ opacity:1; text-decoration:underline; text-underline-offset:3px; }
+
+/* Buttons */
+.btn{
+  background:var(--leaf) !important; color:var(--white) !important;
+  border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,.16);
+  text-transform:none; font-weight:600; letter-spacing:.2px; padding:0 14px;
+}
+.btn:hover{ filter:brightness(1.06); transform:translateY(-1px); }
+.btn-outline{
+  background:transparent !important; color:var(--leaf) !important;
+  border:2px solid var(--leaf); border-radius:10px; box-shadow:none;
+}
+.btn-outline:hover{ background:var(--leaf) !important; color:var(--white) !important; }
+
+/* Inputs (improve contrast on beige) */
+.input-field input[type=text],
+.input-field input[type=email],
+.input-field input[type=password]{
+  border-bottom:1px solid rgba(0,0,0,.35) !important; color:#2b2b2b;
+}
+.input-field input:focus{ border-bottom:2px solid var(--leaf) !important; }
+.input-field label{ color:#7b6d66 !important; }
+.input-field input:focus + label{ color:var(--leaf) !important; }
+
+/* Footer: slimmer, with subtle top border so it doesn't feel like a heavy bar */
+.page-footer{
+  padding-top:16px !important; padding-bottom:16px !important;
+  border-top:1px solid rgba(255,255,255,.25);
+}
+.page-footer .grey-text.text-lighten-4{ color:#eaf5ec !important; }
+
+/* Layout helpers for your auth buttons row */
+.actions-row{ display:flex; gap:12px; align-items:center; }

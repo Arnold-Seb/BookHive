@@ -12,9 +12,10 @@ const editModal = document.getElementById("editModal");
 const closeModal = document.getElementById("closeModal");
 const editBookForm = document.getElementById("editBookForm");
 
-/* ===== Filter States ===== */
+/* ===== Filters ===== */
 let statusFilter = "all";        // all | online | offline
 let availabilityFilter = "all";  // all | available | unavailable
+let filterTitle, filterAuthor, filterQuantity, clearFilters;
 
 /* ===== Notifications ===== */
 function showNotification(message, type = "success") {
@@ -25,21 +26,73 @@ function showNotification(message, type = "success") {
   }, 6000);
 }
 
+/* ===== Fetch Borrowed Total ===== */
+async function fetchBorrowedTotal() {
+  try {
+    const res = await fetch("/api/borrow/total");
+    if (!res.ok) throw new Error("Failed to fetch borrowed data");
+    const data = await res.json();
+    document.getElementById("borrowedBooks").textContent = data.totalBorrowed;
+  } catch (err) {
+    console.error("Error fetching borrowed data:", err);
+    document.getElementById("borrowedBooks").textContent = "0";
+  }
+}
+
+/* ===== Apply Filters to Books ===== */
+function filterBooks(books) {
+  if (!filterTitle || !filterAuthor || !filterQuantity) {
+    return books;
+  }
+
+  const titleFilter = filterTitle.value.toLowerCase();
+  const authorFilter = filterAuthor.value.toLowerCase();
+  const quantityFilter = filterQuantity.value;
+
+  return books.filter(book => {
+    if (titleFilter && !book.title.toLowerCase().includes(titleFilter)) return false;
+    if (authorFilter && !book.author.toLowerCase().includes(authorFilter)) return false;
+    if (quantityFilter) {
+      const quantity = book.quantity || 0;
+      switch (quantityFilter) {
+        case "0":
+          if (quantity !== 0) return false;
+          break;
+        case "1":
+          if (quantity < 1 || quantity > 5) return false;
+          break;
+        case "6":
+          if (quantity < 6) return false;
+          break;
+      }
+    }
+    return true;
+  });
+}
+
 /* ===== Fetch & Render Books ===== */
 async function fetchBooks() {
   try {
     const res = await fetch(API_URL);
     if (!res.ok) throw new Error("Failed to fetch books");
     const books = await res.json();
-    renderBooks(books);
+
+    // Apply filters
+    const filteredBooks = filterBooks(books);
+    renderBooks(filteredBooks);
+
+    // Update stats (all counters)
     updateStats(books);
+
+    // Fetch borrowed count from Borrow model (overrides borrowedBooks)
+    await fetchBorrowedTotal();
   } catch (error) {
     console.error("Error fetching books:", error);
     showNotification("❌ Server Timeout", "error");
   }
 }
 
-// Update Dashboard Stats ✅ fixed
+/* ===== Update Dashboard Stats ===== */
 function updateStats(books) {
   const total = books.length;
 
@@ -59,7 +112,7 @@ function updateStats(books) {
   document.getElementById("offlineBooks").textContent = offline;
 }
 
-/* ===== Render Books with Availability + Status ===== */
+/* ===== Render Books ===== */
 function renderBooks(books) {
   booksTable.innerHTML = "";
 
@@ -83,7 +136,6 @@ function renderBooks(books) {
     const qty = Number(book.quantity ?? 0);
     const isOnline = book.status === "online";
 
-    // ✅ availability logic
     const availabilityText = isOnline
       ? "🟢 Available"
       : qty > 0
@@ -192,11 +244,11 @@ function editBook(id, title, author, genre, quantity, status) {
   editModal.style.display = "flex";
 }
 
-/* Close modal */
 closeModal.onclick = () => (editModal.style.display = "none");
-window.onclick = (e) => { if (e.target === editModal) editModal.style.display = "none"; };
+window.onclick = (e) => {
+  if (e.target === editModal) editModal.style.display = "none";
+};
 
-/* Submit edit form */
 editBookForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = document.getElementById("editId").value;
@@ -229,7 +281,7 @@ editBookForm.addEventListener("submit", async (e) => {
   }
 });
 
-/* ===== Delete Book with Custom Modal ===== */
+/* ===== Delete Book ===== */
 let bookToDelete = null;
 const deleteModal = document.getElementById("deleteModal");
 const cancelDelete = document.getElementById("cancelDelete");
@@ -240,16 +292,13 @@ function deleteBook(id) {
   deleteModal.style.display = "flex";
 }
 
-// Cancel
 cancelDelete.addEventListener("click", () => {
   deleteModal.style.display = "none";
   bookToDelete = null;
 });
 
-// Confirm
 confirmDelete.addEventListener("click", async () => {
   if (!bookToDelete) return;
-
   try {
     const res = await fetch(`${API_URL}/${bookToDelete}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to delete book");
@@ -264,7 +313,6 @@ confirmDelete.addEventListener("click", async () => {
   }
 });
 
-// Close modal if clicked outside
 window.addEventListener("click", (e) => {
   if (e.target === deleteModal) {
     deleteModal.style.display = "none";
@@ -308,7 +356,7 @@ function capitalize(word) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
-// ===== Borrow / Return with confirmation =====
+// ===== Borrow / Return =====
 let bookToBorrow = null;
 let bookToReturn = null;
 
@@ -330,13 +378,11 @@ function returnBook(id) {
   returnModal.style.display = "flex";
 }
 
-// Cancel Borrow
 cancelBorrow.addEventListener("click", () => {
   borrowModal.style.display = "none";
   bookToBorrow = null;
 });
 
-// Confirm Borrow
 confirmBorrow.addEventListener("click", async () => {
   if (!bookToBorrow) return;
   try {
@@ -352,13 +398,11 @@ confirmBorrow.addEventListener("click", async () => {
   }
 });
 
-// Cancel Return
 cancelReturn.addEventListener("click", () => {
   returnModal.style.display = "none";
   bookToReturn = null;
 });
 
-// Confirm Return
 confirmReturn.addEventListener("click", async () => {
   if (!bookToReturn) return;
   try {
@@ -379,5 +423,52 @@ darkToggle.addEventListener("click", () => {
   document.body.classList.toggle("dark");
 });
 
+/* ===== Filtering System UI ===== */
+function addFilterControls() {
+  const tableSection = document.querySelector(".table-section");
+  const filterControls = document.createElement("div");
+  filterControls.className = "filter-controls";
+  filterControls.innerHTML = `
+    <h3>Filter Books</h3>
+    <div class="filter-inputs">
+      <input type="text" id="filterTitle" placeholder="Filter by title" />
+      <input type="text" id="filterAuthor" placeholder="Filter by author" />
+      <select id="filterQuantity">
+        <option value="">All quantities</option>
+        <option value="0">Out of stock (0)</option>
+        <option value="1">Low stock (1-5)</option>
+        <option value="6">In stock (6+)</option>
+      </select>
+      <button id="clearFilters">Clear Filters</button>
+    </div>
+  `;
+
+  const searchBox = document.getElementById("searchBox");
+  tableSection.insertBefore(filterControls, searchBox.nextSibling);
+
+  filterTitle = document.getElementById("filterTitle");
+  filterAuthor = document.getElementById("filterAuthor");
+  filterQuantity = document.getElementById("filterQuantity");
+  clearFilters = document.getElementById("clearFilters");
+}
+
+function setupFilterEvents() {
+  filterTitle.addEventListener("input", fetchBooks);
+  filterAuthor.addEventListener("input", fetchBooks);
+  filterQuantity.addEventListener("change", fetchBooks);
+  clearFilters.addEventListener("click", () => {
+    filterTitle.value = "";
+    filterAuthor.value = "";
+    filterQuantity.value = "";
+    fetchBooks();
+  });
+}
+
 /* ===== Initial Load ===== */
-fetchBooks();
+function initializeApp() {
+  addFilterControls();
+  setupFilterEvents();
+  fetchBooks();
+}
+
+initializeApp();

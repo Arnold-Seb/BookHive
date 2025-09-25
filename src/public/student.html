@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>📚 BookHive – Student View</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+  <header>
+    <h1>📚 BookHive – Borrow Books</h1>
+    <label class="switch">
+      <input type="checkbox" id="darkToggle">
+      <span class="slider"></span>
+    </label>
+  </header>
+
+  <div id="notification"></div>
+
+  <main>
+    <section class="table-section glass">
+      <h2>Available Books</h2>
+      <input type="text" id="searchBox" placeholder="🔍 Search books..." />
+      <table id="booksTable">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Genre</th>
+            <th>Quantity</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Borrow Confirmation Modal -->
+  <div id="borrowModal" class="modal">
+    <div class="modal-content glass">
+      <h2>Confirm Borrow</h2>
+      <p>Are you sure you want to borrow this book?</p>
+      <div class="modal-actions">
+        <button id="cancelBorrow">Cancel</button>
+        <button id="confirmBorrow">Borrow</button>
+      </div>
+    </div>
+  </div>
+
+  <footer><p>BookHive © 2025 | Student View</p></footer>
+  <script src="js/student.js"></script>
+</body>
+</html>

@@ -2,7 +2,7 @@ import request from "supertest";
 import mongoose from "mongoose";
 import path from "path"; // ✅ needed for PDF path
 import app from "../app.js";
-import Book from "../models/book.js";
+import Book from "../models/Book.js";
 
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGODB_URI_TEST);

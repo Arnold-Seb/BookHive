@@ -55,5 +55,3 @@ npm start
 http://localhost:3000
 
 
-## Author -
-Arnold Sebastian
