@@ -1,11 +1,11 @@
-﻿// app.js
+﻿// src/app.js
 import path from "path";
 import express from "express";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import session from "express-session";
 
-// Extra middleware from Ahnaf
+// Middleware
 import compression from "compression";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -13,18 +13,20 @@ import cookieParser from "cookie-parser";
 import expressLayouts from "express-ejs-layouts";
 
 import { connectDB } from "./config/db.js";
-import bookRoutes from "./routes/bookRoutes.js";   // ✅ use your file name
-import authRoutes from "./routes/auth.js";         // from Ahnaf
-import borrowRoutes from "./routes/borrow.js";     // from Ahnaf
+import bookRoutes from "./routes/bookRoutes.js";
+import authRoutes from "./routes/auth.js";
+import borrowRoutes from "./routes/borrow.js";
 
 dotenv.config();
 
+// ESM-safe __dirname / __filename
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// ---------- MIDDLEWARE ----------
+/* ---------- MIDDLEWARE ---------- */
 app.use(helmet());
 app.use(compression());
 app.use(morgan("dev"));
@@ -37,63 +39,66 @@ app.use(
     secret: process.env.SESSION_SECRET || "your_secret_key",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 }
+    cookie: { maxAge: 1000 * 60 * 60 * 24 },
   })
 );
 
-// ---------- VIEWS ----------
+/* ---------- VIEWS ---------- */
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 app.use(expressLayouts);
 app.set("layout", false);
 
-// ---------- ROUTES ----------
+/* ---------- ROUTES ---------- */
 app.use("/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/borrow", borrowRoutes);
 
 app.get("/", (_req, res) => res.redirect("/auth/login"));
 
-// Protectors
+/* ---------- Protectors ---------- */
 function requireLogin(req, res, next) {
   if (!req.session.user) return res.redirect("/auth/login");
   next();
 }
 function requireRole(role) {
   return (req, res, next) => {
-    if (!req.session.user || req.session.user.role !== role)
+    if (!req.session.user || req.session.user.role !== role) {
       return res.status(403).send("Forbidden");
+    }
     next();
   };
 }
 
-// ADMIN dashboard
+/* ---------- Dashboards ---------- */
 app.get("/admin", requireRole("admin"), (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
-// STUDENT dashboard
 app.get("/student", requireRole("student"), (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "student.html"));
 });
 
-// ---------- ERRORS ----------
+/* ---------- ERRORS ---------- */
 app.use((_req, res) => res.status(404).send("Not Found"));
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).send("Server Error");
 });
 
-// ---------- START ----------
-const PORT = process.env.PORT || 3000;
-
-// ✅ Keep your test support (don’t auto-start in test mode)
+/* ---------- START ---------- */
+// ✅ Keep test support (don’t auto-start in test mode)
 if (process.env.NODE_ENV !== "test") {
-  connectDB(process.env.MONGODB_URI).then(() =>
-    app.listen(PORT, () =>
-      console.log(`🚀 BookHive running at http://localhost:${PORT}`)
+  connectDB(process.env.MONGODB_URI)
+    .then(() =>
+      app.listen(PORT, () =>
+        console.log(`🚀 BookHive running at http://localhost:${PORT}`)
+      )
     )
-  );
+    .catch((err) => {
+      console.error("❌ DB init failed:", err);
+      process.exit(1);
+    });
 }
 
-export default app; // ✅ So Jest tests still work
+export default app; // ✅ For Jest tests

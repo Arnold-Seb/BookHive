@@ -3,35 +3,116 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login · BookHive</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-  <link href="/css/auth.css" rel="stylesheet">
+  <meta name="color-scheme" content="light dark">
+  <title><%= title || 'Login · BookHive' %></title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+
+  <style>
+    .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:18px 20px;max-width:700px;margin:0 auto}
+    html.dark .card{background:rgba(31,41,55,.65);border:1px solid rgba(255,255,255,.1)}
+    .row{display:flex;gap:10px;align-items:center}
+    .muted{color:#6b7280;font-size:.92rem}
+  </style>
+
+  <!-- Apply saved theme before paint -->
+  <script>
+    (function(){ try{
+      document.documentElement.classList.toggle('dark', localStorage.getItem('bh-dark')==='1');
+    }catch(e){} })();
+  </script>
 </head>
-<body class="auth-body">
-  <div class="auth-wrapper">
-    <div class="auth-panel">
-      <h2>Welcome to BookHive 🐝</h2>
-      <p>Your campus library, now buzzing online.</p>
+<body>
+  <header>
+    <h1>📚BookHive</h1>
+    <div class="header-actions">
+      <% if (user) { %>
+        <div class="user-menu" id="userMenu">
+          <button type="button" class="user-btn" id="userBtn" aria-haspopup="menu" aria-expanded="false">
+            <span class="avatar"><%= (user.name && user.name[0]) || (user.email && user.email[0]) || 'U' %></span>
+            <span class="user-label"><%= user.name || user.email %></span>
+            <span class="caret" aria-hidden="true">▾</span>
+          </button>
+          <div class="menu" role="menu" aria-labelledby="userBtn">
+            <a href="/hub" role="menuitem">Digital Hub</a>
+            <a href="/account" role="menuitem">Manage Account</a>
+            <form action="/auth/logout" method="post"><button type="submit" role="menuitem">Logout</button></form>
+          </div>
+        </div>
+      <% } %>
+
+      <label class="switch" title="Toggle dark mode" tabindex="0" role="switch" aria-checked="false" id="darkSwitch">
+        <input id="darkToggle" type="checkbox" />
+        <span class="slider"></span>
+      </label>
     </div>
-    <div class="auth-form">
-      <h3>Login</h3>
-      <form action="/auth/login" method="post">
-        <div class="form-group">
-          <label>Email</label>
-          <input name="email" type="email" required>
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input name="password" type="password" required minlength="6">
-        </div>
-        <div class="form-options">
-          <label><input type="checkbox" name="remember"> <span>Remember me</span></label>
-          <a href="#">Forgot?</a>
-        </div>
-        <button type="submit" class="btn-primary">Log in</button>
-        <p class="switch-auth">New user? <a href="/auth/signup">Sign up</a></p>
-      </form>
-    </div>
-  </div>
+  </header>
+
+  <section class="glass" style="max-width:900px;">
+    <h2 style="margin:0 0 14px 0;">Login</h2>
+
+    <% if (user) { %>
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+        <div class="muted">You’re logged in as <strong><%= user.email %></strong> (<%= user.role %>).</div>
+      </div>
+    <% } else { %>
+
+      <% if (error) { %>
+        <div id="notification" class="show error" style="position:static;opacity:1;right:auto;margin-bottom:10px;"><%= error %></div>
+      <% } %>
+
+      <div class="card">
+        <form action="/auth/login" method="post" novalidate>
+          <input id="email" name="email" type="email" placeholder="Email"
+                 value="<%= (form && form.email) ? form.email : '' %>" required>
+          <input id="password" name="password" type="password" placeholder="Password" required minlength="6">
+
+          <label class="row" style="margin-top:4px;">
+            <input type="checkbox" name="asAdmin" value="true" <%= (form && form.asAdmin) ? 'checked' : '' %> >
+            <span>Login as admin</span>
+          </label>
+
+          <button type="submit">Log in</button>
+          <p class="muted" style="margin:10px 0 0;text-align:right;">
+            New here? <a href="/auth/signup">Create an account</a>
+          </p>
+        </form>
+      </div>
+    <% } %>
+  </section>
+
+  <footer>© BookHive</footer>
+
+  <script>
+    // Dark mode (html.dark only)
+    (function(){
+      var KEY='bh-dark';
+      function set(flag){
+        document.documentElement.classList.toggle('dark', !!flag);
+        try{ localStorage.setItem(KEY, flag ? '1':'0'); }catch(e){}
+        var t=document.getElementById('darkToggle');
+        var sw=document.getElementById('darkSwitch');
+        if(t){ t.checked = !!flag; }
+        if(sw){ sw.setAttribute('aria-checked', !!flag); }
+      }
+      document.addEventListener('DOMContentLoaded', function(){
+        var saved=false; try{ saved = localStorage.getItem(KEY)==='1'; }catch(e){}
+        set(saved);
+        var t=document.getElementById('darkToggle');
+        if(t){ t.addEventListener('change', e => set(e.target.checked)); }
+
+        // User menu dropdown
+        var menuWrap=document.getElementById('userMenu');
+        var btn=document.getElementById('userBtn');
+        if(btn && menuWrap){
+          function close(){ menuWrap.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
+          function toggle(){ var o=menuWrap.classList.toggle('open'); btn.setAttribute('aria-expanded', String(o)); }
+          btn.addEventListener('click', toggle);
+          document.addEventListener('click', (ev) => { if(!menuWrap.contains(ev.target)) close(); });
+          document.addEventListener('keydown', (ev) => { if(ev.key==='Escape') close(); });
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
