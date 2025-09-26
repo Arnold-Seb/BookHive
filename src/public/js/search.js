@@ -12,12 +12,8 @@ const statBorrowed = document.getElementById("statBorrowed");
 // Modals
 const borrowModal = document.getElementById("borrowModal");
 const returnModal = document.getElementById("returnModal");
-const cancelBorrow = document.getElementById("cancelBorrow");
-const confirmBorrow = document.getElementById("confirmBorrow");
-const cancelReturn = document.getElementById("cancelReturn");
-const confirmReturn = document.getElementById("confirmReturn");
 
-// Loan history body (only for users)
+// Loan history body (user only)
 const loanHistoryBody = document.getElementById("loanHistoryBody");
 
 let selectedBookId = null;
@@ -25,7 +21,7 @@ let borrowedBooks = new Set();
 
 /* ---------------- Helpers ---------------- */
 async function syncBorrowedBooks() {
-  if (isAdmin) return; // Admins don't track loans
+  if (isAdmin) return; // admins don't track personal loans in UI
   try {
     const res = await fetch("/api/books/history", { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch loan history");
@@ -87,30 +83,95 @@ function renderBooks(books) {
     resultsBody.appendChild(row);
   });
 
-  if (!isAdmin) {
-    document.querySelectorAll(".btn-request").forEach(btn => {
-      btn.addEventListener("click", () => {
-        if (btn.disabled) return;
-        selectedBookId = btn.dataset.id;
-        borrowModal.style.display = "flex";
-      });
-    });
-
-    document.querySelectorAll(".btn-return").forEach(btn => {
-      btn.addEventListener("click", () => {
-        if (btn.disabled) return;
-        selectedBookId = btn.dataset.id;
-        returnModal.style.display = "flex";
-      });
-    });
-  }
-
   statTotal.textContent = books.length;
   statAvailable.textContent = books.filter(b => (b.quantity ?? 0) > 0).length;
   statBorrowed.textContent = isAdmin ? "—" : borrowedBooks.size;
 }
 
-/* ---------------- Loan history ---------------- */
+/* -------- Event delegation for row buttons -------- */
+resultsBody.addEventListener("click", (e) => {
+  if (isAdmin) return;
+
+  const requestBtn = e.target.closest(".btn-request");
+  if (requestBtn && !requestBtn.disabled) {
+    selectedBookId = requestBtn.dataset.id;
+    borrowModal.style.display = "flex";
+    return;
+  }
+
+  const returnBtn = e.target.closest(".btn-return");
+  if (returnBtn && !returnBtn.disabled) {
+    selectedBookId = returnBtn.dataset.id;
+    returnModal.style.display = "flex";
+    return;
+  }
+});
+
+/* -------- Event delegation for modal buttons -------- */
+document.addEventListener("click", async (e) => {
+  // cancel borrow
+  if (e.target.id === "cancelBorrow") {
+    borrowModal.style.display = "none";
+    selectedBookId = null;
+    return;
+  }
+
+  // confirm borrow
+  if (e.target.id === "confirmBorrow") {
+    if (!selectedBookId) return;
+    try {
+      const res = await fetch(`/api/books/${selectedBookId}/borrow`, {
+        method: "PATCH",
+        credentials: "include"
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Failed to borrow");
+      showNotification("✅ Book borrowed successfully", "success");
+      await syncBorrowedBooks();
+      await fetchBooks();
+      await fetchLoanHistory();
+    } catch (err) {
+      console.error(err);
+      showNotification("❌ " + err.message, "error");
+    } finally {
+      borrowModal.style.display = "none";
+      selectedBookId = null;
+    }
+    return;
+  }
+
+  // cancel return
+  if (e.target.id === "cancelReturn") {
+    returnModal.style.display = "none";
+    selectedBookId = null;
+    return;
+  }
+
+  // confirm return
+  if (e.target.id === "confirmReturn") {
+    if (!selectedBookId) return;
+    try {
+      const res = await fetch(`/api/books/${selectedBookId}/return`, {
+        method: "PATCH",
+        credentials: "include"
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Failed to return");
+      showNotification("✅ Book returned successfully", "success");
+      await syncBorrowedBooks();
+      await fetchBooks();
+      await fetchLoanHistory();
+    } catch (err) {
+      console.error(err);
+      showNotification("❌ " + err.message, "error");
+    } finally {
+      returnModal.style.display = "none";
+      selectedBookId = null;
+    }
+  }
+});
+
+/* ---------------- Loan history (user only) ---------------- */
 async function fetchLoanHistory() {
   if (isAdmin || !loanHistoryBody) return;
   try {

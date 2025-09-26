@@ -31,8 +31,8 @@
   <section class="glass">
     <h2 style="margin-top:0; font-weight:600;">Search Books</h2>
     <input id="searchBox" type="text" placeholder="Search by title, author…" />
-    <form onsubmit="doSearch();return false;" style="justify-content:center;">
-      <button type="submit">Search</button>
+    <form onsubmit="return false;" style="justify-content:center;">
+      <button type="button" id="searchBtn">Search</button>
       <% if (user && user.role === 'admin') { %>
         <a href="/admin" style="display:inline-block; text-decoration:none; margin-left:10px;">
           <button type="button">Add Book</button>
@@ -71,46 +71,46 @@
     </table>
   </section>
 
-  <!-- Loan History -->
+  <!-- Loan History (hide for admins) -->
   <% if (user && user.role !== 'admin') { %>
-    <section class="glass" style="margin-top:20px;">
-      <h3 style="margin:0 0 10px 0;">Loan History</h3>
-      <table id="loanHistoryTable">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Borrow Date</th>
-            <th>Return Date</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="loanHistoryBody">
-          <tr><td colspan="4">Loading...</td></tr>
-        </tbody>
-      </table>
-    </section>
+  <section class="glass" style="margin-top:20px;">
+    <h3 style="margin:0 0 10px 0;">Loan History</h3>
+    <table id="loanHistoryTable">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Borrow Date</th>
+          <th>Return Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="loanHistoryBody">
+        <tr><td colspan="4">Loading...</td></tr>
+      </tbody>
+    </table>
+  </section>
   <% } %>
 
   <!-- Borrow Modal -->
-  <div id="borrowModal" class="modal">
+  <div id="borrowModal" class="modal" style="display:none;">
     <div class="modal-content">
       <h2>Confirm Borrow</h2>
       <p>Are you sure you want to borrow this book?</p>
       <div class="modal-actions">
-        <button id="cancelBorrow" class="btn-cancel">Cancel</button>
-        <button id="confirmBorrow" class="btn-confirm">Borrow</button>
+        <button type="button" id="cancelBorrow" class="btn-cancel">Cancel</button>
+        <button type="button" id="confirmBorrow" class="btn-confirm">Borrow</button>
       </div>
     </div>
   </div>
 
   <!-- Return Modal -->
-  <div id="returnModal" class="modal">
+  <div id="returnModal" class="modal" style="display:none;">
     <div class="modal-content">
       <h2>Confirm Return</h2>
       <p>Are you sure you want to return this book?</p>
       <div class="modal-actions">
-        <button id="cancelReturn" class="btn-cancel">Cancel</button>
-        <button id="confirmReturn" class="btn-confirm">Return</button>
+        <button type="button" id="cancelReturn" class="btn-cancel">Cancel</button>
+        <button type="button" id="confirmReturn" class="btn-confirm">Return</button>
       </div>
     </div>
   </div>
