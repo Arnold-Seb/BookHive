@@ -1,3 +1,4 @@
+// src/routes/bookRoutes.js
 import express from "express";
 import multer from "multer";
 import {
@@ -7,32 +8,32 @@ import {
   deleteBook,
   borrowBook,
   returnBook,
-  getLoanHistory   // ✅ added
+  getLoanHistory
 } from "../controllers/bookController.js";
 import Book from "../models/Book.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";   // ✅ added for securing history
 
 const router = express.Router();
 
-// Multer memory storage (no folders on disk)
+// Multer memory storage (for PDFs)
 const upload = multer({ storage: multer.memoryStorage() });
 
-// CRUD routes
+/* ---------- CRUD ---------- */
 router.get("/", getBooks);
 router.post("/", upload.single("pdfFile"), addBook);
 router.put("/:id", upload.single("pdfFile"), updateBook);
 router.delete("/:id", deleteBook);
 
-// Borrow / Return
+/* ---------- Loan history ---------- */
+router.get("/history", getLoanHistory);
+
+/* ---------- Borrow / Return ---------- */
 router.patch("/:id/borrow", borrowBook);
 router.patch("/:id/return", returnBook);
 
-// ✅ Loan history (secured route)
-router.get("/history", authMiddleware, getLoanHistory);
-
-// Fetch PDF for a book
+/* ---------- PDF fetch (keep last) ---------- */
 router.get("/:id/pdf", async (req, res) => {
   try {
+    console.log("📑 PDF fetch for book:", req.params.id);
     const book = await Book.findById(req.params.id);
     if (!book || !book.pdfData) {
       return res.status(404).send("No PDF found");
@@ -40,6 +41,7 @@ router.get("/:id/pdf", async (req, res) => {
     res.contentType("application/pdf");
     res.send(Buffer.from(book.pdfData, "base64"));
   } catch (err) {
+    console.error("[PDF FETCH ERROR]", err);
     res.status(500).send("Error fetching PDF");
   }
 });

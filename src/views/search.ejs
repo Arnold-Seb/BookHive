@@ -41,12 +41,14 @@
     </form>
   </section>
 
+  <!-- Stats -->
   <section class="stats-section">
     <div class="stat-card total"><h3>Total Books</h3><p id="statTotal">—</p></div>
     <div class="stat-card available"><h3>Available</h3><p id="statAvailable">—</p></div>
-    <div class="stat-card borrowed"><h3>Borrowed</h3><p id="statBorrowed">—</p></div>
+    <div class="stat-card borrowed"><h3>My Borrowed</h3><p id="statBorrowed">—</p></div>
   </section>
 
+  <!-- Results -->
   <section class="glass">
     <div style="display:flex;justify-content:space-between;align-items:center; margin-bottom:10px;">
       <h3 style="margin:0;">Results</h3>
@@ -60,29 +62,34 @@
           <th>Genre</th>
           <th>Quantity</th>
           <th>Status</th>
-          <th>Actions</th>
+          <% if (user && user.role !== 'admin') { %>
+            <th>Actions</th>
+          <% } %>
         </tr>
       </thead>
-      <tbody id="resultsBody"></tbody>
+      <tbody id="resultsBody" data-is-admin="<%= user?.role === 'admin' %>"></tbody>
     </table>
   </section>
 
-  <!-- ✅ Loan History Section -->
-  <section class="glass" style="margin-top:20px;">
-    <h3 style="margin:0 0 10px 0;">Loan History</h3>
-    <table id="loanHistoryTable">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Borrow Date</th>
-          <th>Return Date</th>
-        </tr>
-      </thead>
-      <tbody id="loanHistoryBody">
-        <tr><td colspan="3">Loading...</td></tr>
-      </tbody>
-    </table>
-  </section>
+  <!-- Loan History -->
+  <% if (user && user.role !== 'admin') { %>
+    <section class="glass" style="margin-top:20px;">
+      <h3 style="margin:0 0 10px 0;">Loan History</h3>
+      <table id="loanHistoryTable">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Borrow Date</th>
+            <th>Return Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="loanHistoryBody">
+          <tr><td colspan="4">Loading...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  <% } %>
 
   <!-- Borrow Modal -->
   <div id="borrowModal" class="modal">
@@ -115,8 +122,8 @@
   </footer>
 
   <script>
-    // Make user email available to student.js
     window.CURRENT_USER_EMAIL = "<%= user?.email %>";
+    window.CURRENT_USER_ROLE = "<%= user?.role %>";
   </script>
   <script src="/js/search.js"></script>
 </body>

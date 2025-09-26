@@ -1,7 +1,19 @@
 // src/middlewares/authMiddleware.js
-export const authMiddleware = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Unauthorized" });
+import jwt from "jsonwebtoken";
+
+export function authMiddleware(req, res, next) {
+  const token = req.cookies?.token;
+  if (!token) {
+    return res.status(401).json({ message: "No token, not authenticated" });
   }
-  next();
-};
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "dev-secret");
+    // ✅ attach user
+    req.user = decoded;
+    next();
+  } catch (err) {
+    console.error("[authMiddleware] Invalid token:", err.message);
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+}
