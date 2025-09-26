@@ -8,9 +8,11 @@ import {
   deleteBook,
   borrowBook,
   returnBook,
-  getLoanHistory
+  getLoanHistory,
+  getBorrowStats   // ✅ new controller
 } from "../controllers/bookController.js";
 import Book from "../models/Book.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -24,11 +26,14 @@ router.put("/:id", upload.single("pdfFile"), updateBook);
 router.delete("/:id", deleteBook);
 
 /* ---------- Loan history ---------- */
-router.get("/history", getLoanHistory);
+router.get("/history", authMiddleware, getLoanHistory);
+
+/* ---------- Borrow stats ---------- */
+router.get("/stats/borrowed", authMiddleware, getBorrowStats);
 
 /* ---------- Borrow / Return ---------- */
-router.patch("/:id/borrow", borrowBook);
-router.patch("/:id/return", returnBook);
+router.patch("/:id/borrow", authMiddleware, borrowBook);
+router.patch("/:id/return", authMiddleware, returnBook);
 
 /* ---------- PDF fetch (keep last) ---------- */
 router.get("/:id/pdf", async (req, res) => {

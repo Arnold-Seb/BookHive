@@ -32,7 +32,9 @@ export const addBook = async (req, res) => {
         existingBook.pdfName = req.file.originalname;
       }
       await existingBook.save();
-      return res.status(200).json({ message: "Book quantity updated", book: existingBook });
+      return res
+        .status(200)
+        .json({ message: "Book quantity updated", book: existingBook });
     }
 
     const newBook = new Book({
@@ -95,7 +97,10 @@ export const updateBook = async (req, res) => {
       }
       await duplicate.save();
       await book.deleteOne();
-      return res.json({ message: "Books merged due to duplicate update", book: duplicate });
+      return res.json({
+        message: "Books merged due to duplicate update",
+        book: duplicate,
+      });
     }
 
     const updatedBook = await Book.findByIdAndUpdate(id, update, {
@@ -126,37 +131,32 @@ export const deleteBook = async (req, res) => {
 export const borrowBook = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
 
     const book = await Book.findById(id);
     if (!book) return res.status(404).json({ message: "Book not found" });
-    if (book.quantity <= 0) return res.status(400).json({ message: "Book not available" });
+    if (book.quantity <= 0)
+      return res.status(400).json({ message: "Book not available" });
 
-    // ✅ Admin: unlimited borrow, no loan record
-    if (req.user.role === "admin") {
-      book.quantity -= 1;
-      await book.save();
-      return res.json({ message: "✅ Admin borrowed book (no loan record)", book });
-    }
-
-    if (!req.user.id) {
-      return res.status(401).json({ message: "User ID missing in token" });
-    }
-
-    const existingLoan = await Loan.findOne({
-      userId: req.user.id,
-      bookId: book._id,
-      returnDate: null,
-    });
-    if (existingLoan) {
-      return res.status(400).json({ message: "You already borrowed this book" });
+    // Prevent borrowing same book twice (for users only)
+    if (req.user.role !== "admin") {
+      const existingLoan = await Loan.findOne({
+        userId: req.user.id,
+        bookId: book._id,
+        returnDate: null,
+      });
+      if (existingLoan) {
+        return res.status(400).json({ message: "You already borrowed this book" });
+      }
     }
 
     book.quantity -= 1;
     await book.save();
 
     await Loan.create({
-      userId: req.user.id,
+      userId: req.user.id || null,
       bookId: book._id,
       borrowDate: new Date(),
       returnDate: null,
@@ -173,27 +173,25 @@ export const borrowBook = async (req, res) => {
 export const returnBook = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
 
     const book = await Book.findById(id);
     if (!book) return res.status(404).json({ message: "Book not found" });
 
-    // ✅ Admin: unlimited return
+    let loan;
     if (req.user.role === "admin") {
-      book.quantity += 1;
-      await book.save();
-      return res.json({ message: "✅ Admin returned book (no loan record)", book });
+      // Admins can return *any* active loan
+      loan = await Loan.findOne({ bookId: book._id, returnDate: null });
+    } else {
+      loan = await Loan.findOne({
+        userId: req.user.id,
+        bookId: book._id,
+        returnDate: null,
+      });
     }
 
-    if (!req.user.id) {
-      return res.status(401).json({ message: "User ID missing in token" });
-    }
-
-    const loan = await Loan.findOne({
-      userId: req.user.id,
-      bookId: book._id,
-      returnDate: null,
-    });
     if (!loan) return res.status(400).json({ message: "No active loan for this book" });
 
     loan.returnDate = new Date();
@@ -212,9 +210,7 @@ export const returnBook = async (req, res) => {
 /* ===== Get Loan History ===== */
 export const getLoanHistory = async (req, res) => {
   try {
-    if (req.user?.role === "admin") {
-      return res.json([]); // Admin loan history not tracked
-    }
+    console.log("[HISTORY] Fetching for user:", req.user?.email);
 
     const history = await Loan.find({ userId: req.user.id })
       .populate("bookId", "title")
@@ -224,5 +220,26 @@ export const getLoanHistory = async (req, res) => {
   } catch (err) {
     console.error("[HISTORY] Error fetching:", err);
     res.status(500).json({ message: "Failed to fetch loan history" });
+  }
+};
+
+/* ===== Get Borrow Stats ===== */
+export const getBorrowStats = async (req, res) => {
+  try {
+    if (req.user?.role === "admin") {
+      // Admins see global active loans
+      const borrowed = await Loan.countDocuments({ returnDate: null });
+      return res.json({ borrowed });
+    } else {
+      // Users see their own active loans
+      const borrowed = await Loan.countDocuments({
+        userId: req.user.id,
+        returnDate: null,
+      });
+      return res.json({ borrowed });
+    }
+  } catch (err) {
+    console.error("[BORROW STATS] Error:", err);
+    res.status(500).json({ message: "Failed to fetch borrow stats" });
   }
 };

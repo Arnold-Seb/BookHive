@@ -40,7 +40,7 @@ function showNotification(message, type = "success") {
 /* ===== Fetch & Render Books ===== */
 async function fetchBooks() {
   try {
-    const res = await fetch(API_URL);
+    const res = await fetch(API_URL, { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch books");
     const books = await res.json();
     renderBooks(books);
@@ -52,7 +52,7 @@ async function fetchBooks() {
 }
 
 // Update Dashboard Stats
-function updateStats(books) {
+async function updateStats(books) {
   const total = books.length;
 
   const available = books.filter(b => {
@@ -60,7 +60,18 @@ function updateStats(books) {
     return (b.quantity || 0) > 0;
   }).length;
 
-  const borrowed = books.filter(b => (b.quantity || 0) === 0 && b.status !== "online").length;
+  // 🔄 Fetch global borrowed count
+  let borrowed = 0;
+  try {
+    const res = await fetch("/api/books/stats/borrowed", { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      borrowed = data.borrowed || 0;
+    }
+  } catch (err) {
+    console.error("Error fetching global borrowed stats:", err);
+  }
+
   const online = books.filter(b => b.status === "online").length;
   const offline = books.filter(b => b.status === "offline").length;
 
@@ -212,6 +223,7 @@ form.addEventListener("submit", async (e) => {
     const res = await fetch(API_URL, {
       method: "POST",
       body: formData,
+      credentials: "include"
     });
     if (!res.ok) throw new Error("Failed to add book");
     form.reset();
@@ -257,6 +269,7 @@ editBookForm.addEventListener("submit", async (e) => {
     const res = await fetch(`${API_URL}/${id}`, {
       method: "PUT",
       body: formData,
+      credentials: "include"
     });
     if (!res.ok) throw new Error("Failed to update book");
     fetchBooks();
@@ -284,7 +297,7 @@ cancelDelete.addEventListener("click", () => {
 confirmDelete.addEventListener("click", async () => {
   if (!bookToDelete) return;
   try {
-    const res = await fetch(`${API_URL}/${bookToDelete}`, { method: "DELETE" });
+    const res = await fetch(`${API_URL}/${bookToDelete}`, { method: "DELETE", credentials: "include" });
     if (!res.ok) throw new Error("Failed to delete book");
     fetchBooks();
     showNotification("🗑️ Book deleted", "success");
@@ -319,7 +332,7 @@ cancelBorrow.addEventListener("click", () => {
 confirmBorrow.addEventListener("click", async () => {
   if (!bookToBorrow) return;
   try {
-    const res = await fetch(`${API_URL}/${bookToBorrow}/borrow`, { method: "PATCH" });
+    const res = await fetch(`${API_URL}/${bookToBorrow}/borrow`, { method: "PATCH", credentials: "include" });
     if (!res.ok) throw new Error("Borrow failed");
     showNotification("📉 Borrowed 1 copy", "success");
     fetchBooks();
@@ -339,7 +352,7 @@ cancelReturn.addEventListener("click", () => {
 confirmReturn.addEventListener("click", async () => {
   if (!bookToReturn) return;
   try {
-    const res = await fetch(`${API_URL}/${bookToReturn}/return`, { method: "PATCH" });
+    const res = await fetch(`${API_URL}/${bookToReturn}/return`, { method: "PATCH", credentials: "include" });
     if (!res.ok) throw new Error("Return failed");
     showNotification("🔁 Returned 1 copy", "success");
     fetchBooks();

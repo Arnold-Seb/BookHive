@@ -21,7 +21,7 @@ let borrowedBooks = new Set();
 
 /* ---------------- Helpers ---------------- */
 async function syncBorrowedBooks() {
-  if (isAdmin) return; // admins don't track personal loans in UI
+  if (isAdmin) return;
   try {
     const res = await fetch("/api/books/history", { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch loan history");
@@ -34,6 +34,18 @@ async function syncBorrowedBooks() {
   }
 }
 
+async function fetchBorrowStats() {
+  try {
+    const res = await fetch("/api/books/stats/borrowed", { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to fetch borrow stats");
+    const data = await res.json();
+    statBorrowed.textContent = data.borrowed ?? 0;
+  } catch (err) {
+    console.error("Error fetching borrow stats:", err);
+    statBorrowed.textContent = "—";
+  }
+}
+
 async function fetchBooks() {
   try {
     await syncBorrowedBooks();
@@ -41,6 +53,7 @@ async function fetchBooks() {
     if (!res.ok) throw new Error("Failed to fetch books");
     const books = await res.json();
     renderBooks(books);
+    await fetchBorrowStats(); // ✅ update borrowed count
   } catch (err) {
     console.error("Error loading books:", err);
     showNotification("❌ Failed to load books", "error");
@@ -85,7 +98,6 @@ function renderBooks(books) {
 
   statTotal.textContent = books.length;
   statAvailable.textContent = books.filter(b => (b.quantity ?? 0) > 0).length;
-  statBorrowed.textContent = isAdmin ? "—" : borrowedBooks.size;
 }
 
 /* -------- Event delegation for row buttons -------- */
@@ -109,6 +121,8 @@ resultsBody.addEventListener("click", (e) => {
 
 /* -------- Event delegation for modal buttons -------- */
 document.addEventListener("click", async (e) => {
+  if (isAdmin) return;
+
   // cancel borrow
   if (e.target.id === "cancelBorrow") {
     borrowModal.style.display = "none";
