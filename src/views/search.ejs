@@ -30,7 +30,7 @@
 
   <section class="glass">
     <h2 style="margin-top:0; font-weight:600;">Search Books</h2>
-    <input id="searchBox" type="text" placeholder="Search by title, author, ISBN…" />
+    <input id="searchBox" type="text" placeholder="Search by title, author…" />
     <form onsubmit="doSearch();return false;" style="justify-content:center;">
       <button type="submit">Search</button>
       <% if (user && user.role === 'admin') { %>
@@ -54,78 +54,70 @@
     </div>
     <table id="resultsTable">
       <thead>
-        <tr><th>Title</th><th>Author</th><th>ISBN</th><th>Status</th><th>Actions</th></tr>
+        <tr>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Genre</th>
+          <th>Quantity</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
       </thead>
       <tbody id="resultsBody"></tbody>
     </table>
   </section>
 
+  <!-- ✅ Loan History Section -->
+  <section class="glass" style="margin-top:20px;">
+    <h3 style="margin:0 0 10px 0;">Loan History</h3>
+    <table id="loanHistoryTable">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Borrow Date</th>
+          <th>Return Date</th>
+        </tr>
+      </thead>
+      <tbody id="loanHistoryBody">
+        <tr><td colspan="3">Loading...</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Borrow Modal -->
+  <div id="borrowModal" class="modal">
+    <div class="modal-content">
+      <h2>Confirm Borrow</h2>
+      <p>Are you sure you want to borrow this book?</p>
+      <div class="modal-actions">
+        <button id="cancelBorrow" class="btn-cancel">Cancel</button>
+        <button id="confirmBorrow" class="btn-confirm">Borrow</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Return Modal -->
+  <div id="returnModal" class="modal">
+    <div class="modal-content">
+      <h2>Confirm Return</h2>
+      <p>Are you sure you want to return this book?</p>
+      <div class="modal-actions">
+        <button id="cancelReturn" class="btn-cancel">Cancel</button>
+        <button id="confirmReturn" class="btn-confirm">Return</button>
+      </div>
+    </div>
+  </div>
+
   <div id="notification"></div>
 
   <footer>
     © BookHive
-    <!-- removed footer logout -->
   </footer>
 
   <script>
-    // Dark mode controller (click + keyboard)
-    (function(){
-      var KEY='bh-dark';
-      function set(flag){
-        document.documentElement.classList.toggle('dark', !!flag);
-        try{ localStorage.setItem(KEY, flag ? '1':'0'); }catch(e){}
-        var t=document.getElementById('darkToggle');
-        var sw=document.getElementById('darkSwitch');
-        if(t){ t.checked = !!flag; }
-        if(sw){ sw.setAttribute('aria-checked', !!flag); }
-      }
-      document.addEventListener('DOMContentLoaded', function(){
-        var saved=false; try{ saved = localStorage.getItem(KEY)==='1'; }catch(e){}
-        set(saved);
-        var t=document.getElementById('darkToggle');
-        var sw=document.getElementById('darkSwitch');
-        if(t){ t.addEventListener('change', e => set(e.target.checked)); }
-        if(sw){
-          sw.addEventListener('click', ev => { if(ev.target!==t) set(!t.checked); });
-          sw.addEventListener('keydown', ev => {
-            if(ev.key===' '||ev.key==='Enter'){ ev.preventDefault(); set(!t.checked); }
-          });
-        }
-      });
-    })();
-
-    // Demo search (placeholder data)
-    function doSearch(){
-      const q = document.getElementById('searchBox').value.trim();
-      if(!q){ notify('Please type a query.', true); return; }
-      const rows = [
-        {title:`${q} — A Tale`, author:"Alex River", isbn:"978000000001", status:"Available"},
-        {title:`Learning ${q}`, author:"B. Harper", isbn:"978000000002", status:"Borrowed"},
-        {title:`Advanced ${q}`, author:"C. Quinn", isbn:"978000000003", status:"Available"},
-      ];
-      const body = document.getElementById('resultsBody');
-      body.innerHTML = rows.map(r => `
-        <tr>
-          <td title="${r.title}">${r.title}</td>
-          <td title="${r.author}">${r.author}</td>
-          <td>${r.isbn}</td>
-          <td>${r.status}</td>
-          <td>
-            <button onclick="notify('Requested: ${r.title}')">Request</button>
-            <button onclick="notify('Details of ${r.title}')">Details</button>
-          </td>
-        </tr>`).join('');
-      document.getElementById('statTotal').textContent = rows.length;
-      document.getElementById('statAvailable').textContent = rows.filter(r=>r.status==='Available').length;
-      document.getElementById('statBorrowed').textContent = rows.filter(r=>r.status==='Borrowed').length;
-      notify('Search complete');
-    }
-    function notify(msg, isError){
-      const n = document.getElementById('notification');
-      n.textContent = msg;
-      n.className = isError ? 'error show' : 'success show';
-      setTimeout(() => n.classList.remove('show'), 2200);
-    }
+    // Make user email available to student.js
+    window.CURRENT_USER_EMAIL = "<%= user?.email %>";
   </script>
+  <script src="/js/search.js"></script>
 </body>
 </html>

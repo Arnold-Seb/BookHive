@@ -14,6 +14,9 @@ const bookSchema = new mongoose.Schema(
     // status field
     status: { type: String, enum: ["online", "offline"], default: "offline" },
 
+    // borrowed tracking
+    borrowedBy: [{ type: String, default: [] }],  // store user emails
+
     // helper fields
     titleLower:  { type: String },
     authorLower: { type: String },
@@ -45,4 +48,3 @@ bookSchema.virtual("available").get(function () {
 });
 
 export default mongoose.models.Book || mongoose.model("Book", bookSchema);
-

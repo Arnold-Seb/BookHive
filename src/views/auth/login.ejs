@@ -15,7 +15,6 @@
     .muted{color:#6b7280;font-size:.92rem}
   </style>
 
-  <!-- Apply saved theme before paint -->
   <script>
     (function(){ try{
       document.documentElement.classList.toggle('dark', localStorage.getItem('bh-dark')==='1');
@@ -68,7 +67,8 @@
           <input id="password" name="password" type="password" placeholder="Password" required minlength="6">
 
           <label class="row" style="margin-top:4px;">
-            <input type="checkbox" name="asAdmin" value="true" <%= (form && form.asAdmin) ? 'checked' : '' %> >
+            <!-- Checkbox submits "on" when checked -->
+            <input type="checkbox" name="asAdmin" <%= (form && form.asAdmin) ? 'checked' : '' %> >
             <span>Login as admin</span>
           </label>
 
@@ -84,7 +84,6 @@
   <footer>© BookHive</footer>
 
   <script>
-    // Dark mode (html.dark only)
     (function(){
       var KEY='bh-dark';
       function set(flag){
@@ -101,7 +100,6 @@
         var t=document.getElementById('darkToggle');
         if(t){ t.addEventListener('change', e => set(e.target.checked)); }
 
-        // User menu dropdown
         var menuWrap=document.getElementById('userMenu');
         var btn=document.getElementById('userBtn');
         if(btn && menuWrap){

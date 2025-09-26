@@ -8,11 +8,20 @@
 </head>
 <body>
   <header>
-    <h1>📚 BookHive Admin Dashboard</h1>
-    <label class="switch">
-      <input type="checkbox" id="darkToggle">
-      <span class="slider"></span>
-    </label>
+    <div class="header-left">
+      <h1>📚 BookHive Admin Dashboard</h1>
+    </div>
+    <div class="header-actions">
+      <!-- ✅ Logout button -->
+      <form action="/auth/logout" method="post" style="display:inline-block; margin-right:12px;">
+        <button type="submit" class="logout-btn">Logout</button>
+      </form>
+      <!-- Dark mode toggle -->
+      <label class="switch">
+        <input type="checkbox" id="darkToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
   </header>
 
   <!-- Notifications -->
@@ -50,11 +59,8 @@
         <input type="text" id="title" placeholder="Book Title" required />
         <input type="text" id="author" placeholder="Author" required />
         <input type="text" id="genre" placeholder="Genre" required />
-        <!-- Quantity -->
         <input type="number" id="quantity" placeholder="Quantity" min="0" required />
-        <!-- PDF Upload -->
         <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" />
-        <!-- Status Dropdown -->
         <select id="status" name="status">
           <option value="offline">Offline</option>
           <option value="online">Online</option>
@@ -89,7 +95,7 @@
     </section>
   </main>
 
-  <!-- Edit Book Modal -->
+  <!-- Modals (Edit/Delete/Borrow/Return) -->
   <div id="editModal" class="modal">
     <div class="modal-content glass">
       <span class="close" id="closeModal">&times;</span>
@@ -104,10 +110,8 @@
         <input type="text" id="editGenre" placeholder="Genre" required />
         <label for="Quantity">Quantity:</label>
         <input type="number" id="editQuantity" placeholder="Quantity" min="0" required />
-        <!-- PDF Upload -->
         <label for="editPdf">Upload PDF:</label>
         <input type="file" id="editPdf" name="pdfFile" accept="application/pdf" />
-        <!-- Status Dropdown -->
         <label for="editStatus">Status:</label>
         <select id="editStatus" name="status">
           <option value="offline">Offline</option>
@@ -118,7 +122,6 @@
     </div>
   </div>
 
-  <!-- Delete Confirmation Modal -->
   <div id="deleteModal" class="modal">
     <div class="modal-content glass">
       <h2>Confirm Delete</h2>
@@ -130,7 +133,6 @@
     </div>
   </div>
 
-  <!-- Borrow Confirmation Modal -->
   <div id="borrowModal" class="modal">
     <div class="modal-content glass">
       <h2>Confirm Borrow</h2>
@@ -142,7 +144,6 @@
     </div>
   </div>
 
-  <!-- Return Confirmation Modal -->
   <div id="returnModal" class="modal">
     <div class="modal-content glass">
       <h2>Confirm Return</h2>

@@ -15,28 +15,35 @@ body.dark {
   color: #f9fafb;
 }
 
+/* ===== Header Layout ===== */
 header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   background: rgba(31, 41, 55, 0.7);
   backdrop-filter: blur(14px);
-  padding: 20px;
-  text-align: center;
+  padding: 14px 20px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
-  position: relative;
   font-family: 'Poppins', sans-serif;
 }
 
 header h1 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 600;
   color: #f9fafb;
 }
 
+/* Header actions (logout + dark mode toggle) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 /* ===== Dark Mode Switch ===== */
 .switch {
-  position: absolute;
-  right: 20px;
-  top: 20px;
+  position: relative;
   display: inline-block;
   width: 52px;
   height: 28px;
@@ -69,6 +76,22 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(24px);
+}
+
+/* ===== Logout Button ===== */
+.logout-btn {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.logout-btn:hover {
+  background: #c0392b;
 }
 
 /* ===== Glass Effect Sections ===== */
@@ -282,7 +305,6 @@ body.dark .stat-card h3 {
   transform: translateY(-5px);
 }
 
-
 /* ===== Table ===== */
 table {
   width: 100%;
@@ -324,14 +346,12 @@ th {
   width: 95%;
 }
 
-
 body.dark th {
   background: linear-gradient(135deg, #4f46e5, #4338ca);
 }
 
 tr:nth-child(even) { background: rgba(255,255,255,0.05); }
 tr:hover { background: rgba(255,255,255,0.1); }
-
 
 /* ===== Table Buttons (Edit/Delete) ===== */
 table button {
@@ -382,7 +402,6 @@ td:last-child, th:last-child {
   width: auto; 
   text-align: left;
 }
-
 
 /* ===== Modal ===== */
 .modal {
@@ -483,12 +502,6 @@ body.dark .modal-content {
   color: #ef4444;
 }
 
-/* Animation */
-@keyframes popup {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
 /* ===== Delete Modal ===== */
 #deleteModal .modal-content {
   max-width: 400px;
@@ -577,7 +590,6 @@ body.dark .filter-btn.active {
   background: linear-gradient(135deg, #22c55e, #15803d);
 }
 
-
 /* ===== Notifications ===== */
 #notification {
   position: fixed;
@@ -604,68 +616,15 @@ body.dark .filter-btn.active {
   opacity: 1;
 }
 
-
 /* ===== Footer ===== */
 footer {
+  display: flex;
+  justify-content: center;   /* center horizontally */
+  align-items: center;       /* center vertically if taller */
   text-align: center;
   padding: 18px;
   background: rgba(31,41,55,0.7);
   backdrop-filter: blur(10px);
   color: #f1f5f9;
   margin-top: auto;
-}
-
-
-
-.filter-controls {
-  margin: 15px 0;
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-}
-
-.filter-controls h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-size: 16px;
-}
-
-.filter-inputs {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.filter-inputs input,
-.filter-inputs select {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-}
-
-#clearFilters {
-  padding: 8px 12px;
-  background: #ff6b6b;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-#clearFilters:hover {
-  background: #ff5252;
-}
-
-/* Dark mode support */
-.dark .filter-controls {
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.dark .filter-inputs input,
-.dark .filter-inputs select {
-  background: #2d3748;
-  border-color: #4a5568;
-  color: white;
 }

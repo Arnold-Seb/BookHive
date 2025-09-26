@@ -11,6 +11,7 @@
     "test": "cross-env NODE_ENV=test node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "compression": "^1.7.5",
     "cookie-parser": "^1.4.7",
@@ -27,13 +28,7 @@
     "mongoose": "^8.6.0",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
-    "helmet": "^7.0.0",
-    "compression": "^1.7.4",
-    "morgan": "^1.10.0",
-    "cookie-parser": "^1.4.6",
-    "express-ejs-layouts": "^2.5.1",
     "uid-safe": "^2.1.5"
-
   },
   "devDependencies": {
     "cross-env": "^10.0.0",

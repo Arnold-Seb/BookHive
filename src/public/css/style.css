@@ -113,7 +113,6 @@ html.dark .user-menu .menu button:hover { background: rgba(255,255,255,0.06); }
   background: #64748b;
   transition: 0.2s;
 }
-/* Keep the toggle "thumb" WHITE in both states */
 .slider:before {
   content: "";
   position: absolute;
@@ -126,20 +125,13 @@ html.dark .user-menu .menu button:hover { background: rgba(255,255,255,0.06); }
 .switch input:checked + .slider { background: #10b981; }
 .switch input:checked + .slider:before { transform: translateX(24px); background: #ffffff; }
 
-/* ===== "Login as admin" checkbox — light/white ===== */
-/* ===== "Login as admin" checkbox — light/white ===== */
-input[name="asAdmin"]{
+/* ===== "Login as admin" checkbox ===== */
+input[name="asAdmin"] {
   -webkit-appearance: none;
   appearance: none;
-
-  /* keep this input small; don't inherit from `form input` */
   flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
-  min-width: 0;          /* override global min-width:200px */
-  padding: 0;            /* override global padding */
-  box-sizing: border-box;
-
+  width: 18px; height: 18px; min-width: 0;
+  padding: 0; box-sizing: border-box;
   display: inline-block;
   vertical-align: middle;
   margin-right: 8px;
@@ -150,31 +142,14 @@ input[name="asAdmin"]{
   cursor: pointer;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
-html.dark input[name="asAdmin"]{
-  background: #ffffff;
-  border-color: #d1d5db;
+html.dark input[name="asAdmin"] { background: #ffffff; border-color: #d1d5db; }
+input[name="asAdmin"]:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.35); border-color: #6366f1; }
+input[name="asAdmin"]:checked { border-color: #4f46e5; }
+input[name="asAdmin"]:checked::after {
+  content: ""; position: absolute; left: 4px; top: 1px;
+  width: 6px; height: 12px; border: 2px solid #4f46e5;
+  border-top: none; border-left: none; transform: rotate(45deg);
 }
-input[name="asAdmin"]:focus{
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(99,102,241,.35);
-  border-color: #6366f1;
-}
-input[name="asAdmin"]:checked{
-  border-color: #4f46e5;
-}
-input[name="asAdmin"]:checked::after{
-  content: "";
-  position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 6px;
-  height: 12px;
-  border: 2px solid #4f46e5;
-  border-top: none;
-  border-left: none;
-  transform: rotate(45deg);
-}
-
 
 /* ===== Glass Card ===== */
 .glass {
@@ -266,17 +241,36 @@ html.dark .stat-card h3 { color: #e2e8f0; }
 /* ===== Table ===== */
 table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 th, td { padding: 14px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-td:last-child, th:last-child { width: 180px; text-align: center; }
+td:last-child, th:last-child { width: 220px; text-align: left; }
 th { background: linear-gradient(135deg, #475569, #334155); color: #f9fafb; font-weight: 600; }
 html.dark th { background: linear-gradient(135deg, #4f46e5, #4338ca); }
 tr:nth-child(even) { background: rgba(255,255,255,0.05); }
 tr:hover { background: rgba(255,255,255,0.1); }
 
 /* Table buttons */
-table button { display:inline-block; margin:0 4px; padding:8px 14px; border:none; border-radius:6px; font-weight:500; cursor:pointer; transition:transform .2s, opacity .2s; }
-table button:first-child { background:#f59e0b; color:#fff; }
-table button:last-child { background:#ef4444; color:#fff; }
+table button {
+  display:inline-block;
+  margin:0 4px;
+  padding:8px 14px;
+  border:none;
+  border-radius:6px;
+  font-weight:500;
+  cursor:pointer;
+  transition:transform .2s, opacity .2s;
+}
+.btn-request { background:#f59e0b; color:#fff; }   /* orange */
+.btn-return  { background:#ef4444; color:#fff; }   /* red */
+
 table button:hover { transform:scale(1.05); opacity:.9; }
+
+/* Disabled states */
+.btn-request[disabled],
+.btn-return[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(40%);
+  transform: none;
+}
 
 /* ===== Notifications ===== */
 #notification {
@@ -292,4 +286,51 @@ table button:hover { transform:scale(1.05); opacity:.9; }
 footer {
   text-align: center; padding: 18px;
   background: rgba(31,41,55,0.7); backdrop-filter: blur(10px); color: #f1f5f9; margin-top: auto;
+}
+
+/* ===== Modals ===== */
+.modal {
+  display: none; /* hidden by default */
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 25px 40px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  text-align: center;
+  animation: popup .25s ease;
+}
+html.dark .modal-content {
+  background: #1e293b;
+  color: #f9fafb;
+}
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-around;
+  gap: 12px;
+}
+.modal-actions button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-cancel { background: #9ca3af; color: #fff; }
+.btn-confirm { background: linear-gradient(135deg,#6366f1,#4338ca); color: #fff; }
+.btn-cancel:hover { background: #6b7280; }
+.btn-confirm:hover { background: #4f46e5; }
+
+@keyframes popup {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
 }

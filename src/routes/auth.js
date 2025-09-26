@@ -1,66 +1,222 @@
+// src/routes/auth.js
 import { Router } from "express";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import User from "../models/User.js";
+import { JWT_SECRET } from "../config/secrets.js";
 
 const router = Router();
 
-// ---------- SIGNUP ----------
-router.post("/signup", async (req, res) => {
-  const { name, email, password, confirmPassword } = req.body;
-  if (password !== confirmPassword) return res.status(400).send("Passwords do not match");
+/* ------------------------ Helpers ------------------------ */
+function issueCookie(res, userPayload) {
+  console.log("🔑 [auth.js] Signing with secret:", JWT_SECRET);
+  const token = jwt.sign(userPayload, JWT_SECRET, { expiresIn: "7d" });
+  res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+}
 
-  try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).send("Email already registered");
+function isTruthy(v) {
+  return v === true || v === "true" || v === "on" || v === "1";
+}
 
-    // First registered user becomes admin, others default to student
-    const adminExists = await User.exists({ role: "admin" });
-    const role = adminExists ? "student" : "admin";
+function getAdminConfig() {
+  const emails = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const password = (process.env.ADMIN_PASSWORD || "").trim();
+  return { emails, password };
+}
 
-    const user = new User({ name, email, password, role });
-    await user.save();
+function isAdminEmail(email, emails) {
+  return emails.includes(String(email || "").toLowerCase());
+}
 
-    res.redirect("/auth/login");
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
-  }
-});
-
-// ---------- LOGIN ----------
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).send("Invalid email or password");
-
-    const isMatch = user.matchPassword
-      ? await user.matchPassword(password)
-      : await user.comparePassword(password);
-
-    if (!isMatch) return res.status(400).send("Invalid email or password");
-
-    // Save session
-    req.session.user = { id: user._id, role: user.role, name: user.name };
-
-    // Redirect by role
-    if (user.role === "admin") return res.redirect("/admin");
-    return res.redirect("/student");
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Server error");
-  }
-});
-
-// ---------- LOGOUT ----------
-router.post("/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.redirect("/auth/login");
+/* ------------------------ Pages ------------------------ */
+router.get("/login", (req, res) => {
+  res.render("auth/login", {
+    title: "Login · BookHive",
+    error: null,
+    form: {},
+    user: req.user || null,
   });
 });
 
-// ---------- RENDER PAGES ----------
-router.get("/login", (_req, res) => res.render("auth/login"));
-router.get("/signup", (_req, res) => res.render("auth/signup"));
+router.get("/signup", (req, res) => {
+  res.render("auth/signup", {
+    title: "Sign up · BookHive",
+    error: null,
+    form: {},
+    user: req.user || null,
+  });
+});
+
+/* ------------------------ Actions ------------------------ */
+// USER SIGNUP
+router.post("/signup", async (req, res) => {
+  try {
+    const { name, email, password, confirmPassword } = req.body || {};
+    if (!name || !email || !password) {
+      return res.status(400).render("auth/signup", {
+        title: "Sign up · BookHive",
+        error: "Please fill all fields.",
+        form: { name, email },
+        user: null,
+      });
+    }
+    if (password !== confirmPassword) {
+      return res.status(400).render("auth/signup", {
+        title: "Sign up · BookHive",
+        error: "Passwords do not match.",
+        form: { name, email },
+        user: null,
+      });
+    }
+
+    const lower = email.toLowerCase();
+    const exists = await User.findOne({ email: lower });
+    if (exists) {
+      return res.status(400).render("auth/signup", {
+        title: "Sign up · BookHive",
+        error: "Email already registered.",
+        form: { name, email },
+        user: null,
+      });
+    }
+
+    const created = await User.create({ name, email: lower, password, role: "user" });
+
+    issueCookie(res, {
+      id: created._id,
+      name: created.name,
+      email: created.email,
+      role: "user",
+    });
+    return res.redirect("/search");
+  } catch (err) {
+    console.error("[SIGNUP]", err);
+    return res.status(500).render("auth/signup", {
+      title: "Sign up · BookHive",
+      error: "Server error",
+      form: {},
+      user: null,
+    });
+  }
+});
+
+// LOGIN
+router.post("/login", async (req, res) => {
+  try {
+    const emailRaw = (req.body?.email || "").trim();
+    const passwordRaw = (req.body?.password || "").trim();
+    const asAdmin = isTruthy(req.body?.asAdmin);
+    const form = { email: emailRaw, asAdmin };
+
+    if (!emailRaw || !passwordRaw) {
+      return res.status(400).render("auth/login", {
+        title: "Login · BookHive",
+        error: "Please enter email and password.",
+        form,
+        user: null,
+      });
+    }
+
+    if (asAdmin) {
+      const { emails: ADMIN_EMAILS, password: ADMIN_PASSWORD } = getAdminConfig();
+      if (!ADMIN_PASSWORD) {
+        console.error("[ADMIN LOGIN] ADMIN_PASSWORD missing");
+        return res.status(500).render("auth/login", {
+          title: "Login · BookHive",
+          error: "Server config error. Contact admin.",
+          form,
+          user: null,
+        });
+      }
+
+      const lower = emailRaw.toLowerCase();
+      const emailOk = isAdminEmail(lower, ADMIN_EMAILS);
+      const passOk = passwordRaw === ADMIN_PASSWORD;
+
+      if (!emailOk) {
+        return res.status(400).render("auth/login", {
+          title: "Login · BookHive",
+          error: "That email is not on the admin list.",
+          form,
+          user: null,
+        });
+      }
+      if (!passOk) {
+        return res.status(400).render("auth/login", {
+          title: "Login · BookHive",
+          error: "Incorrect admin password.",
+          form,
+          user: null,
+        });
+      }
+
+      issueCookie(res, { name: "Administrator", email: lower, role: "admin" });
+      return res.redirect("/search");
+    }
+
+    const { emails: ADMIN_EMAILS } = getAdminConfig();
+    if (isAdminEmail(emailRaw, ADMIN_EMAILS)) {
+      return res.status(400).render("auth/login", {
+        title: "Login · BookHive",
+        error: "This is an admin email. Tick 'Login as admin'.",
+        form: { email: emailRaw, asAdmin: true },
+        user: null,
+      });
+    }
+
+    const user = await User.findOne({ email: emailRaw.toLowerCase() });
+    if (!user) {
+      return res.status(400).render("auth/login", {
+        title: "Login · BookHive",
+        error: "Invalid credentials",
+        form,
+        user: null,
+      });
+    }
+
+    const ok = user.comparePassword
+      ? await user.comparePassword(passwordRaw)
+      : await bcrypt.compare(passwordRaw, user.password);
+
+    if (!ok) {
+      return res.status(400).render("auth/login", {
+        title: "Login · BookHive",
+        error: "Invalid credentials",
+        form,
+        user: null,
+      });
+    }
+
+    issueCookie(res, {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: "user",
+    });
+    return res.redirect("/search");
+  } catch (err) {
+    console.error("[LOGIN]", err);
+    return res.status(500).render("auth/login", {
+      title: "Login · BookHive",
+      error: "Server error",
+      form: {},
+      user: null,
+    });
+  }
+});
+
+// LOGOUT
+router.post("/logout", (_req, res) => {
+  res.clearCookie("token");
+  res.redirect("/auth/login");
+});
 
 export default router;

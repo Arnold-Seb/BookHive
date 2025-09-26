@@ -7,15 +7,26 @@ const notification = document.getElementById("notification");
 const searchBox = document.getElementById("searchBox");
 const darkToggle = document.getElementById("darkToggle");
 
-// Modal
+// Modals
 const editModal = document.getElementById("editModal");
 const closeModal = document.getElementById("closeModal");
 const editBookForm = document.getElementById("editBookForm");
 
-/* ===== Filters ===== */
+const deleteModal = document.getElementById("deleteModal");
+const cancelDelete = document.getElementById("cancelDelete");
+const confirmDelete = document.getElementById("confirmDelete");
+
+const borrowModal = document.getElementById("borrowModal");
+const cancelBorrow = document.getElementById("cancelBorrow");
+const confirmBorrow = document.getElementById("confirmBorrow");
+
+const returnModal = document.getElementById("returnModal");
+const cancelReturn = document.getElementById("cancelReturn");
+const confirmReturn = document.getElementById("confirmReturn");
+
+/* ===== Filter States ===== */
 let statusFilter = "all";        // all | online | offline
 let availabilityFilter = "all";  // all | available | unavailable
-let filterTitle, filterAuthor, filterQuantity, clearFilters;
 
 /* ===== Notifications ===== */
 function showNotification(message, type = "success") {
@@ -26,73 +37,21 @@ function showNotification(message, type = "success") {
   }, 6000);
 }
 
-/* ===== Fetch Borrowed Total ===== */
-async function fetchBorrowedTotal() {
-  try {
-    const res = await fetch("/api/borrow/total");
-    if (!res.ok) throw new Error("Failed to fetch borrowed data");
-    const data = await res.json();
-    document.getElementById("borrowedBooks").textContent = data.totalBorrowed;
-  } catch (err) {
-    console.error("Error fetching borrowed data:", err);
-    document.getElementById("borrowedBooks").textContent = "0";
-  }
-}
-
-/* ===== Apply Filters to Books ===== */
-function filterBooks(books) {
-  if (!filterTitle || !filterAuthor || !filterQuantity) {
-    return books;
-  }
-
-  const titleFilter = filterTitle.value.toLowerCase();
-  const authorFilter = filterAuthor.value.toLowerCase();
-  const quantityFilter = filterQuantity.value;
-
-  return books.filter(book => {
-    if (titleFilter && !book.title.toLowerCase().includes(titleFilter)) return false;
-    if (authorFilter && !book.author.toLowerCase().includes(authorFilter)) return false;
-    if (quantityFilter) {
-      const quantity = book.quantity || 0;
-      switch (quantityFilter) {
-        case "0":
-          if (quantity !== 0) return false;
-          break;
-        case "1":
-          if (quantity < 1 || quantity > 5) return false;
-          break;
-        case "6":
-          if (quantity < 6) return false;
-          break;
-      }
-    }
-    return true;
-  });
-}
-
 /* ===== Fetch & Render Books ===== */
 async function fetchBooks() {
   try {
     const res = await fetch(API_URL);
     if (!res.ok) throw new Error("Failed to fetch books");
     const books = await res.json();
-
-    // Apply filters
-    const filteredBooks = filterBooks(books);
-    renderBooks(filteredBooks);
-
-    // Update stats (all counters)
+    renderBooks(books);
     updateStats(books);
-
-    // Fetch borrowed count from Borrow model (overrides borrowedBooks)
-    await fetchBorrowedTotal();
   } catch (error) {
     console.error("Error fetching books:", error);
     showNotification("❌ Server Timeout", "error");
   }
 }
 
-/* ===== Update Dashboard Stats ===== */
+// Update Dashboard Stats
 function updateStats(books) {
   const total = books.length;
 
@@ -101,7 +60,7 @@ function updateStats(books) {
     return (b.quantity || 0) > 0;
   }).length;
 
-  const borrowed = total - available;
+  const borrowed = books.filter(b => (b.quantity || 0) === 0 && b.status !== "online").length;
   const online = books.filter(b => b.status === "online").length;
   const offline = books.filter(b => b.status === "offline").length;
 
@@ -121,11 +80,9 @@ function renderBooks(books) {
     const isOnline = book.status === "online";
     const isAvailable = isOnline || qty > 0;
 
-    // Status filter
     if (statusFilter === "online" && book.status !== "online") return false;
     if (statusFilter === "offline" && book.status !== "offline") return false;
 
-    // Availability filter
     if (availabilityFilter === "available" && !isAvailable) return false;
     if (availabilityFilter === "unavailable" && isAvailable) return false;
 
@@ -152,22 +109,62 @@ function renderBooks(books) {
       <td>
         ${
           book.pdfData
-            ? `<button class="btn-pdf" onclick="openPdf('${book._id}')">📄 View PDF</button>`
+            ? `<button class="btn-pdf" data-id="${book._id}">📄 View PDF</button>`
             : "No PDF"
         }
       </td>
       <td>${book.status || "offline"}</td>
       <td>
         <div class="actions-cell">
-          <button class="btn-edit" 
-            onclick="editBook('${book._id}', '${book.title}', '${book.author}', '${book.genre}', ${qty}, '${book.status || "offline"}')">✏️ Edit</button>
-          <button class="btn-delete" onclick="deleteBook('${book._id}')">🗑️ Delete</button>
-          <button class="btn-borrow" onclick="borrowBook('${book._id}')" ${(qty === 0 && !isOnline) ? "disabled" : ""}>📉 Borrow</button>
-          <button class="btn-return" onclick="returnBook('${book._id}')">🔁 Return</button>
+          <button class="btn-edit"
+            data-id="${book._id}"
+            data-title="${book.title}"
+            data-author="${book.author}"
+            data-genre="${book.genre}"
+            data-quantity="${qty}"
+            data-status="${book.status || "offline"}"
+          >✏️ Edit</button>
+          <button class="btn-delete" data-id="${book._id}">🗑️ Delete</button>
+          <button class="btn-borrow" data-id="${book._id}" ${(qty === 0 && !isOnline) ? "disabled" : ""}>📉 Borrow</button>
+          <button class="btn-return" data-id="${book._id}">🔁 Return</button>
         </div>
       </td>
     `;
     booksTable.appendChild(row);
+  });
+
+  attachRowEventListeners();
+}
+
+/* ===== Attach Row Event Listeners ===== */
+function attachRowEventListeners() {
+  document.querySelectorAll(".btn-pdf").forEach(btn => {
+    btn.addEventListener("click", () => openPdf(btn.dataset.id));
+  });
+
+  document.querySelectorAll(".btn-edit").forEach(btn => {
+    btn.addEventListener("click", () => {
+      editBook(
+        btn.dataset.id,
+        btn.dataset.title,
+        btn.dataset.author,
+        btn.dataset.genre,
+        btn.dataset.quantity,
+        btn.dataset.status
+      );
+    });
+  });
+
+  document.querySelectorAll(".btn-delete").forEach(btn => {
+    btn.addEventListener("click", () => deleteBook(btn.dataset.id));
+  });
+
+  document.querySelectorAll(".btn-borrow").forEach(btn => {
+    btn.addEventListener("click", () => borrowBook(btn.dataset.id));
+  });
+
+  document.querySelectorAll(".btn-return").forEach(btn => {
+    btn.addEventListener("click", () => returnBook(btn.dataset.id));
   });
 }
 
@@ -194,13 +191,6 @@ document.getElementById("closePdfModal").onclick = () => {
   document.getElementById("pdfViewer").src = "";
 };
 
-window.onclick = (e) => {
-  if (e.target === pdfModal) {
-    pdfModal.style.display = "none";
-    document.getElementById("pdfViewer").src = "";
-  }
-};
-
 /* ===== Add Book ===== */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -211,7 +201,7 @@ form.addEventListener("submit", async (e) => {
   formData.append("genre", document.getElementById("genre").value);
 
   const qVal = Number(document.getElementById("quantity").value);
-  formData.append("quantity", Number.isFinite(qVal) ? qVal : 0); // ✅ allow 0
+  formData.append("quantity", Number.isFinite(qVal) ? qVal : 0);
 
   formData.append("status", document.getElementById("status").value);
 
@@ -245,9 +235,6 @@ function editBook(id, title, author, genre, quantity, status) {
 }
 
 closeModal.onclick = () => (editModal.style.display = "none");
-window.onclick = (e) => {
-  if (e.target === editModal) editModal.style.display = "none";
-};
 
 editBookForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -259,7 +246,7 @@ editBookForm.addEventListener("submit", async (e) => {
   formData.append("genre", document.getElementById("editGenre").value);
 
   const qVal = Number(document.getElementById("editQuantity").value);
-  formData.append("quantity", Number.isFinite(qVal) ? qVal : 0); // ✅ allow 0
+  formData.append("quantity", Number.isFinite(qVal) ? qVal : 0);
 
   formData.append("status", document.getElementById("editStatus").value);
 
@@ -283,9 +270,6 @@ editBookForm.addEventListener("submit", async (e) => {
 
 /* ===== Delete Book ===== */
 let bookToDelete = null;
-const deleteModal = document.getElementById("deleteModal");
-const cancelDelete = document.getElementById("cancelDelete");
-const confirmDelete = document.getElementById("confirmDelete");
 
 function deleteBook(id) {
   bookToDelete = id;
@@ -313,60 +297,9 @@ confirmDelete.addEventListener("click", async () => {
   }
 });
 
-window.addEventListener("click", (e) => {
-  if (e.target === deleteModal) {
-    deleteModal.style.display = "none";
-    bookToDelete = null;
-  }
-});
-
-/* ===== Search ===== */
-searchBox.addEventListener("input", (e) => {
-  const query = e.target.value.toLowerCase();
-  Array.from(booksTable.querySelectorAll("tr")).forEach((row) => {
-    row.style.display = row.textContent.toLowerCase().includes(query) ? "" : "none";
-  });
-});
-
-/* ===== Filter Toggles ===== */
-const filterStatusBtn = document.getElementById("filterStatus");
-const filterAvailabilityBtn = document.getElementById("filterAvailability");
-
-if (filterStatusBtn) {
-  filterStatusBtn.addEventListener("click", () => {
-    if (statusFilter === "all") statusFilter = "online";
-    else if (statusFilter === "online") statusFilter = "offline";
-    else statusFilter = "all";
-    filterStatusBtn.textContent = `Filter Status: ${capitalize(statusFilter)}`;
-    fetchBooks();
-  });
-}
-
-if (filterAvailabilityBtn) {
-  filterAvailabilityBtn.addEventListener("click", () => {
-    if (availabilityFilter === "all") availabilityFilter = "available";
-    else if (availabilityFilter === "available") availabilityFilter = "unavailable";
-    else availabilityFilter = "all";
-    filterAvailabilityBtn.textContent = `Filter Availability: ${capitalize(availabilityFilter)}`;
-    fetchBooks();
-  });
-}
-
-function capitalize(word) {
-  return word.charAt(0).toUpperCase() + word.slice(1);
-}
-
-// ===== Borrow / Return =====
+/* ===== Borrow / Return ===== */
 let bookToBorrow = null;
 let bookToReturn = null;
-
-const borrowModal = document.getElementById("borrowModal");
-const cancelBorrow = document.getElementById("cancelBorrow");
-const confirmBorrow = document.getElementById("confirmBorrow");
-
-const returnModal = document.getElementById("returnModal");
-const cancelReturn = document.getElementById("cancelReturn");
-const confirmReturn = document.getElementById("confirmReturn");
 
 function borrowBook(id) {
   bookToBorrow = id;
@@ -418,57 +351,55 @@ confirmReturn.addEventListener("click", async () => {
   }
 });
 
+/* ===== Search ===== */
+searchBox.addEventListener("input", (e) => {
+  const query = e.target.value.toLowerCase();
+  Array.from(booksTable.querySelectorAll("tr")).forEach((row) => {
+    row.style.display = row.textContent.toLowerCase().includes(query) ? "" : "none";
+  });
+});
+
+/* ===== Filter Toggles ===== */
+const filterStatusBtn = document.getElementById("filterStatus");
+const filterAvailabilityBtn = document.getElementById("filterAvailability");
+
+if (filterStatusBtn) {
+  filterStatusBtn.addEventListener("click", () => {
+    if (statusFilter === "all") statusFilter = "online";
+    else if (statusFilter === "online") statusFilter = "offline";
+    else statusFilter = "all";
+    filterStatusBtn.textContent = `Filter Status: ${capitalize(statusFilter)}`;
+    fetchBooks();
+  });
+}
+
+if (filterAvailabilityBtn) {
+  filterAvailabilityBtn.addEventListener("click", () => {
+    if (availabilityFilter === "all") availabilityFilter = "available";
+    else if (availabilityFilter === "available") availabilityFilter = "unavailable";
+    else availabilityFilter = "all";
+    filterAvailabilityBtn.textContent = `Filter Availability: ${capitalize(availabilityFilter)}`;
+    fetchBooks();
+  });
+}
+
+function capitalize(word) {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
 /* ===== Dark Mode ===== */
 darkToggle.addEventListener("click", () => {
   document.body.classList.toggle("dark");
 });
 
-/* ===== Filtering System UI ===== */
-function addFilterControls() {
-  const tableSection = document.querySelector(".table-section");
-  const filterControls = document.createElement("div");
-  filterControls.className = "filter-controls";
-  filterControls.innerHTML = `
-    <h3>Filter Books</h3>
-    <div class="filter-inputs">
-      <input type="text" id="filterTitle" placeholder="Filter by title" />
-      <input type="text" id="filterAuthor" placeholder="Filter by author" />
-      <select id="filterQuantity">
-        <option value="">All quantities</option>
-        <option value="0">Out of stock (0)</option>
-        <option value="1">Low stock (1-5)</option>
-        <option value="6">In stock (6+)</option>
-      </select>
-      <button id="clearFilters">Clear Filters</button>
-    </div>
-  `;
-
-  const searchBox = document.getElementById("searchBox");
-  tableSection.insertBefore(filterControls, searchBox.nextSibling);
-
-  filterTitle = document.getElementById("filterTitle");
-  filterAuthor = document.getElementById("filterAuthor");
-  filterQuantity = document.getElementById("filterQuantity");
-  clearFilters = document.getElementById("clearFilters");
-}
-
-function setupFilterEvents() {
-  filterTitle.addEventListener("input", fetchBooks);
-  filterAuthor.addEventListener("input", fetchBooks);
-  filterQuantity.addEventListener("change", fetchBooks);
-  clearFilters.addEventListener("click", () => {
-    filterTitle.value = "";
-    filterAuthor.value = "";
-    filterQuantity.value = "";
-    fetchBooks();
-  });
-}
+/* ===== Unified Modal Close (click outside) ===== */
+window.onclick = (e) => {
+  if (e.target === pdfModal) pdfModal.style.display = "none";
+  if (e.target === editModal) editModal.style.display = "none";
+  if (e.target === deleteModal) deleteModal.style.display = "none";
+  if (e.target === borrowModal) borrowModal.style.display = "none";
+  if (e.target === returnModal) returnModal.style.display = "none";
+};
 
 /* ===== Initial Load ===== */
-function initializeApp() {
-  addFilterControls();
-  setupFilterEvents();
-  fetchBooks();
-}
-
-initializeApp();
+fetchBooks();

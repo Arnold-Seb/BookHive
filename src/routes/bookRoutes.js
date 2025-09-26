@@ -6,9 +6,11 @@ import {
   updateBook,
   deleteBook,
   borrowBook,
-  returnBook
+  returnBook,
+  getLoanHistory   // ✅ added
 } from "../controllers/bookController.js";
-import Book from "../models/book.js";
+import Book from "../models/Book.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";   // ✅ added for securing history
 
 const router = express.Router();
 
@@ -24,6 +26,9 @@ router.delete("/:id", deleteBook);
 // Borrow / Return
 router.patch("/:id/borrow", borrowBook);
 router.patch("/:id/return", returnBook);
+
+// ✅ Loan history (secured route)
+router.get("/history", authMiddleware, getLoanHistory);
 
 // Fetch PDF for a book
 router.get("/:id/pdf", async (req, res) => {

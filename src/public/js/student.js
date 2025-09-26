@@ -1,6 +1,5 @@
 const API_URL = "/api/books";
-const BORROW_URL = "/api/borrow"; // backend endpoint for borrowing
-const booksTable = document.querySelector("#booksTable tbody");
+const booksTable = document.querySelector("#resultsBody"); // ✅ fixed selector
 const searchBox = document.getElementById("searchBox");
 const notification = document.getElementById("notification");
 
@@ -10,12 +9,11 @@ const cancelBorrow = document.getElementById("cancelBorrow");
 const confirmBorrow = document.getElementById("confirmBorrow");
 
 let bookToBorrow = null;
-const CURRENT_USER_NAME = "Student"; // Replace with dynamic student name if available
 
 // Fetch books from server
 async function fetchBooks() {
   try {
-    const res = await fetch(API_URL);
+    const res = await fetch(API_URL, { credentials: "include" }); 
     const books = await res.json();
     renderBooks(books);
   } catch (error) {
@@ -63,15 +61,16 @@ confirmBorrow.addEventListener("click", async () => {
   if (!bookToBorrow) return;
 
   try {
-    const res = await fetch(BORROW_URL, {
-      method: "POST",
+    const res = await fetch(`/api/books/${bookToBorrow}/borrow`, {
+      method: "PATCH",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookId: bookToBorrow, studentName: CURRENT_USER_NAME }),
     });
     if (!res.ok) throw new Error("Failed to borrow book");
 
     showNotification("✅ Book borrowed successfully", "success");
-    fetchBooks(); // refresh table
+    fetchBooks();
+    fetchLoanHistory(); // ✅ refresh history
   } catch (error) {
     console.error(error);
     showNotification("❌ Failed to borrow book", "error");
@@ -92,10 +91,40 @@ searchBox.addEventListener("input", () => {
   });
 });
 
+// ✅ Loan History fetch
+async function fetchLoanHistory() {
+  try {
+    const res = await fetch("/api/books/history", { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to fetch loan history");
+    const history = await res.json();
+
+    const body = document.getElementById("loanHistoryBody");
+    body.innerHTML = "";
+
+    if (!history || history.length === 0) {
+      body.innerHTML = "<tr><td colspan='3'>No past loans found</td></tr>";
+      return;
+    }
+
+    history.forEach(loan => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${loan.bookTitle}</td>
+        <td>${loan.borrowDate ? new Date(loan.borrowDate).toLocaleDateString() : "-"}</td>
+        <td>${loan.returnDate ? new Date(loan.returnDate).toLocaleDateString() : "-"}</td>
+      `;
+      body.appendChild(row);
+    });
+  } catch (err) {
+    console.error(err);
+    showNotification("❌ Failed to load loan history", "error");
+  }
+}
+
 // Notification helper
 function showNotification(message, type) {
   notification.textContent = message;
-  notification.className = type; // success or error
+  notification.className = type; 
   setTimeout(() => notification.textContent = "", 3000);
 }
 
@@ -106,3 +135,4 @@ window.addEventListener("click", (e) => {
 
 // Initial fetch
 fetchBooks();
+fetchLoanHistory();
