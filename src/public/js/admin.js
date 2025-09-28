@@ -24,9 +24,10 @@ const returnModal = document.getElementById("returnModal");
 const cancelReturn = document.getElementById("cancelReturn");
 const confirmReturn = document.getElementById("confirmReturn");
 
-/* ===== Filter States ===== */
+/* ===== Filter & Search States ===== */
 let statusFilter = "all";        // all | online | offline
 let availabilityFilter = "all";  // all | available | unavailable
+let searchQuery = "";            // 🔍 search text
 
 /* ===== Notifications ===== */
 function showNotification(message, type = "success") {
@@ -91,9 +92,19 @@ function renderBooks(books) {
     const isOnline = book.status === "online";
     const isAvailable = isOnline || qty > 0;
 
+    // 🔍 Search filter
+    const textMatch =
+      book.title.toLowerCase().includes(searchQuery) ||
+      book.author.toLowerCase().includes(searchQuery) ||
+      (book.genre || "").toLowerCase().includes(searchQuery);
+
+    if (!textMatch) return false;
+
+    // Status filter
     if (statusFilter === "online" && book.status !== "online") return false;
     if (statusFilter === "offline" && book.status !== "offline") return false;
 
+    // Availability filter
     if (availabilityFilter === "available" && !isAvailable) return false;
     if (availabilityFilter === "unavailable" && isAvailable) return false;
 
@@ -366,10 +377,8 @@ confirmReturn.addEventListener("click", async () => {
 
 /* ===== Search ===== */
 searchBox.addEventListener("input", (e) => {
-  const query = e.target.value.toLowerCase();
-  Array.from(booksTable.querySelectorAll("tr")).forEach((row) => {
-    row.style.display = row.textContent.toLowerCase().includes(query) ? "" : "none";
-  });
+  searchQuery = e.target.value.toLowerCase();
+  fetchBooks();
 });
 
 /* ===== Filter Toggles ===== */
@@ -405,7 +414,7 @@ darkToggle.addEventListener("click", () => {
   document.body.classList.toggle("dark");
 });
 
-/* ===== Unified Modal Close (click outside) ===== */
+/* ===== Unified Modal Close ===== */
 window.onclick = (e) => {
   if (e.target === pdfModal) pdfModal.style.display = "none";
   if (e.target === editModal) editModal.style.display = "none";

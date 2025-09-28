@@ -18,6 +18,7 @@ const loanHistoryBody = document.getElementById("loanHistoryBody");
 
 let selectedBookId = null;
 let borrowedBooks = new Set();
+let searchQuery = ""; // 🔍 search text
 
 /* ---------------- Helpers ---------------- */
 async function syncBorrowedBooks() {
@@ -53,7 +54,7 @@ async function fetchBooks() {
     if (!res.ok) throw new Error("Failed to fetch books");
     const books = await res.json();
     renderBooks(books);
-    await fetchBorrowStats(); // ✅ update borrowed count
+    await fetchBorrowStats();
   } catch (err) {
     console.error("Error loading books:", err);
     showNotification("❌ Failed to load books", "error");
@@ -63,7 +64,15 @@ async function fetchBooks() {
 function renderBooks(books) {
   resultsBody.innerHTML = "";
 
-  books.forEach(book => {
+  const filtered = books.filter(book => {
+    const textMatch =
+      book.title.toLowerCase().includes(searchQuery) ||
+      book.author.toLowerCase().includes(searchQuery) ||
+      (book.genre || "").toLowerCase().includes(searchQuery);
+    return textMatch;
+  });
+
+  filtered.forEach(book => {
     const available = (book.quantity ?? 0) > 0;
     const isBorrowed = borrowedBooks.has(book._id);
 
@@ -96,8 +105,8 @@ function renderBooks(books) {
     resultsBody.appendChild(row);
   });
 
-  statTotal.textContent = books.length;
-  statAvailable.textContent = books.filter(b => (b.quantity ?? 0) > 0).length;
+  statTotal.textContent = filtered.length;
+  statAvailable.textContent = filtered.filter(b => (b.quantity ?? 0) > 0).length;
 }
 
 /* -------- Event delegation for row buttons -------- */
@@ -219,6 +228,15 @@ function showNotification(msg, type) {
   notification.textContent = msg;
   notification.className = type === "error" ? "error show" : "success show";
   setTimeout(() => notification.classList.remove("show"), 2500);
+}
+
+/* ===== Search Input ===== */
+const searchBox = document.getElementById("searchBox");
+if (searchBox) {
+  searchBox.addEventListener("input", (e) => {
+    searchQuery = e.target.value.toLowerCase();
+    fetchBooks();
+  });
 }
 
 /* ---------------- Init ---------------- */

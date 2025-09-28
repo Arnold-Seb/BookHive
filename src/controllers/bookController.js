@@ -138,18 +138,15 @@ export const borrowBook = async (req, res) => {
       return res.status(400).json({ message: "Book not available" });
 
     if (req.user.role === "admin") {
-      // Admin flow: just decrement quantity, no loan tracking
       book.quantity -= 1;
       await book.save();
       return res.json({ message: "Admin borrowed a copy", book });
     }
 
-    // User flow: must be authenticated with id
     if (!req.user?.id) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    // Prevent borrowing same book twice
     const existingLoan = await Loan.findOne({
       userId: req.user.id,
       bookId: book._id,
@@ -159,7 +156,6 @@ export const borrowBook = async (req, res) => {
       return res.status(400).json({ message: "You already borrowed this book" });
     }
 
-    // Create loan for user
     book.quantity -= 1;
     await book.save();
 
@@ -186,13 +182,11 @@ export const returnBook = async (req, res) => {
     if (!book) return res.status(404).json({ message: "Book not found" });
 
     if (req.user.role === "admin") {
-      // Admin flow: just increment quantity, no loan lookup
       book.quantity += 1;
       await book.save();
       return res.json({ message: "Admin returned a copy", book });
     }
 
-    // User flow: must be authenticated with id
     if (!req.user?.id) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -237,11 +231,9 @@ export const getLoanHistory = async (req, res) => {
 export const getBorrowStats = async (req, res) => {
   try {
     if (req.user?.role === "admin") {
-      // Admins see global active loans
       const borrowed = await Loan.countDocuments({ returnDate: null });
       return res.json({ borrowed });
     } else {
-      // Users see their own active loans
       const borrowed = await Loan.countDocuments({
         userId: req.user.id,
         returnDate: null,
