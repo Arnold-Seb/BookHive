@@ -9,7 +9,8 @@ import {
   borrowBook,
   returnBook,
   getLoanHistory,
-  getBorrowStats   // ✅ new controller
+  getBorrowStats,
+  getActiveLoans   // ✅ new controller
 } from "../controllers/bookController.js";
 import Book from "../models/Book.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
@@ -35,10 +36,12 @@ router.get("/stats/borrowed", authMiddleware, getBorrowStats);
 router.patch("/:id/borrow", authMiddleware, borrowBook);
 router.patch("/:id/return", authMiddleware, returnBook);
 
-/* ---------- PDF fetch (keep last) ---------- */
+/* ---------- Active Loans for a Book ---------- */
+router.get("/:id/activeLoans", authMiddleware, getActiveLoans);
+
+/* ---------- PDF fetch ---------- */
 router.get("/:id/pdf", async (req, res) => {
   try {
-    console.log("📑 PDF fetch for book:", req.params.id);
     const book = await Book.findById(req.params.id);
     if (!book || !book.pdfData) {
       return res.status(404).send("No PDF found");

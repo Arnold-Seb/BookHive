@@ -136,7 +136,8 @@
   <div id="borrowModal" class="modal">
     <div class="modal-content glass">
       <h2>Confirm Borrow</h2>
-      <p>Are you sure you want to borrow this book?</p>
+      <label for="borrowerSelect">Select a user/admin to borrow this book:</label>
+      <select id="borrowerSelect"></select>
       <div class="modal-actions">
         <button id="cancelBorrow">Cancel</button>
         <button id="confirmBorrow">Borrow</button>
@@ -147,7 +148,8 @@
   <div id="returnModal" class="modal">
     <div class="modal-content glass">
       <h2>Confirm Return</h2>
-      <p>Are you sure you want to return this book?</p>
+      <label for="returnerSelect">Select who is returning this book:</label>
+      <select id="returnerSelect"></select>
       <div class="modal-actions">
         <button id="cancelReturn">Cancel</button>
         <button id="confirmReturn">Return</button>

@@ -1,13 +1,30 @@
+// src/models/Loan.js
 import mongoose from "mongoose";
 
 const loanSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    bookId: { type: mongoose.Schema.Types.ObjectId, ref: "Book", required: true },
-    borrowDate: { type: Date, default: Date.now },
-    returnDate: { type: Date, default: null },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",   // ✅ allows populate("userId")
+      required: true,
+    },
+    bookId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Book",   // ✅ allows populate("bookId")
+      required: true,
+    },
+    borrowDate: {
+      type: Date,
+      default: Date.now,
+    },
+    returnDate: {
+      type: Date,
+      default: null,
+    },
   },
-  { timestamps: true }
+  { 
+    timestamps: true 
+  }
 );
 
 export default mongoose.model("Loan", loanSchema);

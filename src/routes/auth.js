@@ -4,12 +4,12 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import { JWT_SECRET } from "../config/secrets.js";
+import { requireAuth } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 
 /* ------------------------ Helpers ------------------------ */
 function issueCookie(res, userPayload) {
-  console.log("🔑 [auth.js] Signing with secret:", JWT_SECRET);
   const token = jwt.sign(userPayload, JWT_SECRET, { expiresIn: "7d" });
   res.cookie("token", token, {
     httpOnly: true,
@@ -128,7 +128,6 @@ router.post("/login", async (req, res) => {
     if (asAdmin) {
       const { emails: ADMIN_EMAILS, password: ADMIN_PASSWORD } = getAdminConfig();
       if (!ADMIN_PASSWORD) {
-        console.error("[ADMIN LOGIN] ADMIN_PASSWORD missing");
         return res.status(500).render("auth/login", {
           title: "Login · BookHive",
           error: "Server config error. Contact admin.",
@@ -159,7 +158,7 @@ router.post("/login", async (req, res) => {
       }
 
       issueCookie(res, { name: "Administrator", email: lower, role: "admin" });
-      return res.redirect("/search");
+      return res.redirect("/admin");
     }
 
     const { emails: ADMIN_EMAILS } = getAdminConfig();
@@ -217,6 +216,20 @@ router.post("/login", async (req, res) => {
 router.post("/logout", (_req, res) => {
   res.clearCookie("token");
   res.redirect("/auth/login");
+});
+
+/* ------------------------ New: List all users (admin only) ------------------------ */
+router.get("/users", requireAuth, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const users = await User.find({}, "_id name email role").sort({ name: 1 }).lean();
+    res.json(users);
+  } catch (err) {
+    console.error("[GET USERS]", err);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
 });
 
 export default router;

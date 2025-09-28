@@ -616,6 +616,37 @@ body.dark .filter-btn.active {
   opacity: 1;
 }
 
+/* ===== Borrower & Returner Selects ===== */
+#borrowerSelect,
+#returnerSelect {
+  width: 100%;
+  padding: 10px 14px;
+  margin: 12px 0;
+  border-radius: 8px;
+  border: 2px solid #9ca3af;
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#borrowerSelect:hover,
+#returnerSelect:hover {
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #f9fafb, #e0e7ff);
+}
+
+#borrowerSelect:focus,
+#returnerSelect:focus {
+  outline: none;
+  border-color: #1d4ed8;
+  background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
+}
+
+
 /* ===== Footer ===== */
 footer {
   display: flex;

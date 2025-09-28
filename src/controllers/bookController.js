@@ -131,36 +131,30 @@ export const deleteBook = async (req, res) => {
 export const borrowBook = async (req, res) => {
   try {
     const { id } = req.params;
+    const { borrowerId } = req.body;
 
     const book = await Book.findById(id);
     if (!book) return res.status(404).json({ message: "Book not found" });
     if (book.quantity <= 0)
       return res.status(400).json({ message: "Book not available" });
 
-    if (req.user.role === "admin") {
-      book.quantity -= 1;
-      await book.save();
-      return res.json({ message: "Admin borrowed a copy", book });
-    }
-
-    if (!req.user?.id) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    const userId = borrowerId || req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Not authenticated" });
 
     const existingLoan = await Loan.findOne({
-      userId: req.user.id,
+      userId,
       bookId: book._id,
       returnDate: null,
     });
     if (existingLoan) {
-      return res.status(400).json({ message: "You already borrowed this book" });
+      return res.status(400).json({ message: "This user already borrowed this book" });
     }
 
     book.quantity -= 1;
     await book.save();
 
     await Loan.create({
-      userId: req.user.id,
+      userId,
       bookId: book._id,
       borrowDate: new Date(),
       returnDate: null,
@@ -177,26 +171,20 @@ export const borrowBook = async (req, res) => {
 export const returnBook = async (req, res) => {
   try {
     const { id } = req.params;
+    const { borrowerId } = req.body;
 
     const book = await Book.findById(id);
     if (!book) return res.status(404).json({ message: "Book not found" });
 
-    if (req.user.role === "admin") {
-      book.quantity += 1;
-      await book.save();
-      return res.json({ message: "Admin returned a copy", book });
-    }
-
-    if (!req.user?.id) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
+    const userId = borrowerId || req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Not authenticated" });
 
     const loan = await Loan.findOne({
-      userId: req.user.id,
+      userId,
       bookId: book._id,
       returnDate: null,
     });
-    if (!loan) return res.status(400).json({ message: "No active loan for this book" });
+    if (!loan) return res.status(400).json({ message: "No active loan for this user" });
 
     loan.returnDate = new Date();
     await loan.save();
@@ -214,8 +202,6 @@ export const returnBook = async (req, res) => {
 /* ===== Get Loan History ===== */
 export const getLoanHistory = async (req, res) => {
   try {
-    console.log("[HISTORY] Fetching for user:", req.user?.email);
-
     const history = await Loan.find({ userId: req.user.id })
       .populate("bookId", "title")
       .sort({ borrowDate: -1 });
@@ -224,6 +210,20 @@ export const getLoanHistory = async (req, res) => {
   } catch (err) {
     console.error("[HISTORY] Error fetching:", err);
     res.status(500).json({ message: "Failed to fetch loan history" });
+  }
+};
+
+/* ===== Get Active Loans for a Book (admin use) ===== */
+export const getActiveLoans = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const loans = await Loan.find({ bookId: id, returnDate: null })
+      .populate("userId", "name role")
+      .lean();
+    res.json(loans);
+  } catch (err) {
+    console.error("[ACTIVE LOANS] Error:", err);
+    res.status(500).json({ message: "Failed to fetch active loans" });
   }
 };
 
