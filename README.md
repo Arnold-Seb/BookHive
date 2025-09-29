@@ -61,12 +61,12 @@ MONGODB_URI=mongodb://localhost:27017/bookhive
 MONGODB_URI_TEST=mongodb://localhost:27017/bookhive_test
 
 # App
-PORT=3000
-JWT_SECRET=your-very-strong-secret
+- PORT=3000
+- JWT_SECRET=your-very-strong-secret
 
 # Admin login (email list is comma-separated)
-ADMIN_EMAILS=admin@example.com
-ADMIN_PASSWORD=supersecret
+- ADMIN_EMAILS=admin@example.com
+- ADMIN_PASSWORD=supersecret
 
 ### 4) Start the server
 ```bash
