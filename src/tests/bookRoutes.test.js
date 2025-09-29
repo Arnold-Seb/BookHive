@@ -4,42 +4,48 @@ import path from "path";
 import app from "../app.js";
 import Book from "../models/Book.js";
 import User from "../models/User.js";
+import Loan from "../models/Loan.js"; // ✅ clear loans between tests
 
-let cookie; // 🔑 auth cookie for requests
+let cookieHeader; // ✅ normalized "Cookie" header value
 
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGODB_URI_TEST);
 
-  // Create test user
+  // Fresh user
   await User.deleteMany({});
-  const user = await User.create({
+  await User.create({
     name: "TestUser",
     email: "testuser@example.com",
     password: "password123",
     role: "user",
   });
 
-  // Login to get cookie
+  // Login and normalize cookie(s)
   const loginRes = await request(app)
     .post("/auth/login")
     .send({ email: "testuser@example.com", password: "password123" });
 
-  cookie = loginRes.headers["set-cookie"];
+  // turn Set-Cookie[] into a single "Cookie" header like "token=...; other=..."
+  cookieHeader = loginRes.headers["set-cookie"]
+    ?.map((c) => c.split(";")[0])
+    .join("; ");
 });
 
 afterEach(async () => {
-  await Book.deleteMany();
+  await Loan.deleteMany({}); // ✅ avoid cross-test borrow collisions
+  await Book.deleteMany({});
 });
 
 afterAll(async () => {
-  await mongoose.connection.close();
+  await mongoose.connection.close(true);
+  // or: await mongoose.disconnect();
 });
 
 describe("Book API", () => {
   it("should add a new book", async () => {
     const res = await request(app)
       .post("/api/books")
-      .set("Cookie", cookie)
+      .set("Cookie", cookieHeader)
       .send({
         title: "Test Book",
         author: "Tester",
@@ -62,8 +68,7 @@ describe("Book API", () => {
 
     const res = await request(app)
       .patch(`/api/books/${book._id}/borrow`)
-      .set("Cookie", cookie)
-      .send({ borrowerId: mongoose.Types.ObjectId(cookie?.userId) });
+      .set("Cookie", cookieHeader); // ✅ no borrowerId; server uses req.user.id
 
     expect(res.statusCode).toBe(200);
     expect(res.body.book.quantity).toBe(0);
@@ -79,7 +84,7 @@ describe("Book API", () => {
 
     const res = await request(app)
       .patch(`/api/books/${book._id}/borrow`)
-      .set("Cookie", cookie);
+      .set("Cookie", cookieHeader);
 
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe("Book not available");
@@ -96,14 +101,12 @@ describe("Book API", () => {
     // Borrow first
     await request(app)
       .patch(`/api/books/${book._id}/borrow`)
-      .set("Cookie", cookie)
-      .send({ borrowerId: mongoose.Types.ObjectId(cookie?.userId) });
+      .set("Cookie", cookieHeader);
 
     // Then return
     const res = await request(app)
       .patch(`/api/books/${book._id}/return`)
-      .set("Cookie", cookie)
-      .send({ borrowerId: mongoose.Types.ObjectId(cookie?.userId) });
+      .set("Cookie", cookieHeader); // ✅ no borrowerId
 
     expect(res.statusCode).toBe(200);
     expect(res.body.book.quantity).toBe(1);
@@ -119,7 +122,7 @@ describe("Book API", () => {
 
     const res = await request(app)
       .put(`/api/books/${book._id}`)
-      .set("Cookie", cookie)
+      .set("Cookie", cookieHeader)
       .send({
         title: "New Title",
         author: "New Author",
@@ -144,7 +147,7 @@ describe("Book API", () => {
 
     const res = await request(app)
       .delete(`/api/books/${book._id}`)
-      .set("Cookie", cookie);
+      .set("Cookie", cookieHeader);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe("Book deleted");
@@ -158,7 +161,7 @@ describe("Book API", () => {
 
     const res = await request(app)
       .post("/api/books")
-      .set("Cookie", cookie)
+      .set("Cookie", cookieHeader)
       .field("title", "PDF Book")
       .field("author", "PDF Author")
       .field("genre", "Tech")
@@ -167,13 +170,13 @@ describe("Book API", () => {
 
     expect(res.statusCode).toBe(201);
     expect(res.body.book.title).toBe("PDF Book");
-    expect(res.body.book.status).toBe("online"); // ✅ auto-set
+    expect(res.body.book.status).toBe("online"); // ✅ auto-set if PDF uploaded
     expect(res.body.book.pdfName).toBe("sample.pdf");
 
     // Fetch PDF back
     const pdfRes = await request(app)
       .get(`/api/books/${res.body.book._id}/pdf`)
-      .set("Cookie", cookie);
+      .set("Cookie", cookieHeader);
 
     expect(pdfRes.statusCode).toBe(200);
     expect(pdfRes.headers["content-type"]).toBe("application/pdf");
