@@ -149,7 +149,13 @@ document.addEventListener("click", async (e) => {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || "Failed to borrow");
-      showNotification("✅ Book borrowed successfully", "success");
+       const DUE_DAYS = 14;
+      const due = new Date(Date.now() + DUE_DAYS * 24 * 60 * 60 * 1000);
+      const dueStr = due.toLocaleDateString();
+      showNotification(
+        data.message || `✅ Book borrowed successfully — due in ${DUE_DAYS} days (on ${dueStr})`,
+        "success"
+      );
       await syncBorrowedBooks();
       await fetchBooks();
       await fetchLoanHistory();

@@ -68,7 +68,10 @@ confirmBorrow.addEventListener("click", async () => {
     });
     if (!res.ok) throw new Error("Failed to borrow book");
 
-    showNotification("✅ Book borrowed successfully", "success");
+    const DUE_DAYS = 14;
+    const due = new Date(Date.now() + DUE_DAYS * 24 * 60 * 60 * 1000);
+    const dueStr = due.toLocaleDateString();
+    showNotification(`✅ Book borrowed successfully — due in ${DUE_DAYS} days (on ${dueStr})`, "success");
     fetchBooks();
     fetchLoanHistory(); // ✅ refresh history
   } catch (error) {
