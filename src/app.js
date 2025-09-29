@@ -1,4 +1,5 @@
-﻿// src/app.js
+﻿// src/app.js  (TOP OF FILE)
+
 import path from "path";
 import express from "express";
 import dotenv from "dotenv";
@@ -9,17 +10,19 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import expressLayouts from "express-ejs-layouts";
 import jwt from "jsonwebtoken";
-
+import startDueReminderJob from "./jobs/dueReminders.js";
 import { connectDB } from "./config/db.js";
 import { JWT_SECRET } from "./config/secrets.js";
 import bookRoutes from "./routes/bookRoutes.js";
 import authRoutes from "./routes/auth.js";
 import borrowRoutes from "./routes/borrow.js";
 
-dotenv.config();
-
+// ---- resolve project root and load .env explicitly ----
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
+console.log("[ENV] host=%s port=%s secure=%s",
+  process.env.SMTP_HOST, process.env.SMTP_PORT, process.env.SMTP_SECURE);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -117,13 +120,16 @@ app.use((err, _req, res, _next) => {
 if (process.env.NODE_ENV !== "test") {
   connectDB(process.env.MONGODB_URI)
     .then(() =>
-      app.listen(PORT, () =>
-        console.log(`🚀 BookHive running at http://localhost:${PORT}`)
-      )
+      app.listen(PORT, () => {
+        console.log(`🚀 BookHive running at http://localhost:${PORT}`);
+        // start daily reminder cron AFTER the server & DB are up
+        startDueReminderJob();
+      })
     )
     .catch((err) => {
       console.error("❌ DB init failed:", err);
       process.exit(1);
+      startDueReminderJob(); // start daily reminder cron
     });
 }
 
