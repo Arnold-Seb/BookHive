@@ -342,5 +342,130 @@ window.onclick = (e) => {
   if (e.target === returnModal) returnModal.style.display = "none";
 };
 
+/* ===== Add Book ===== */
+if (form) {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault(); // ✅ stop page refresh
+
+    const formData = new FormData();
+    formData.append("title", document.getElementById("title").value.trim());
+    formData.append("author", document.getElementById("author").value.trim());
+    formData.append("genre", document.getElementById("genre").value.trim());
+
+    const qVal = Number(document.getElementById("quantity").value) || 0;
+    formData.append("quantity", qVal);
+
+    formData.append("status", document.getElementById("status").value);
+
+    const pdfFile = document.getElementById("pdfFile").files[0];
+    if (pdfFile) formData.append("pdfFile", pdfFile);
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to add book");
+
+      const data = await res.json();
+      showNotification(data.message || "✅ Book added successfully", "success");
+
+      form.reset();
+      fetchBooks(); // refresh table
+    } catch (err) {
+      console.error("Error adding book:", err);
+      showNotification("❌ Failed to add book", "error");
+    }
+  });
+}
+
+/* ===== Edit Book: open modal & submit ===== */
+function editBook(id, title, author, genre, quantity, status) {
+  document.getElementById("editId").value = id;
+  document.getElementById("editTitle").value = title || "";
+  document.getElementById("editAuthor").value = author || "";
+  document.getElementById("editGenre").value = genre || "";
+  document.getElementById("editQuantity").value = Number(quantity) || 0;
+  document.getElementById("editStatus").value = status || "offline";
+  editModal.style.display = "flex";
+}
+
+// close edit modal (X)
+if (closeModal) {
+  closeModal.addEventListener("click", () => {
+    editModal.style.display = "none";
+  });
+}
+
+// submit edit form (PUT /:id)
+if (editBookForm) {
+  editBookForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("editId").value;
+
+    const fd = new FormData();
+    fd.append("title", document.getElementById("editTitle").value.trim());
+    fd.append("author", document.getElementById("editAuthor").value.trim());
+    fd.append("genre", document.getElementById("editGenre").value.trim());
+    fd.append("quantity", Number(document.getElementById("editQuantity").value) || 0);
+    fd.append("status", document.getElementById("editStatus").value);
+
+    const pdf = document.getElementById("editPdf").files[0];
+    if (pdf) fd.append("pdfFile", pdf);
+
+    try {
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: "PUT",
+        body: fd,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update book");
+      showNotification("✏️ Book updated successfully", "success");
+      editModal.style.display = "none";
+      fetchBooks();
+    } catch (err) {
+      console.error("Error updating book:", err);
+      showNotification("❌ Failed to update book", "error");
+    }
+  });
+}
+
+/* ===== Delete Book modal ===== */
+let bookToDelete = null;
+
+function deleteBook(id) {
+  bookToDelete = id;
+  deleteModal.style.display = "flex";
+}
+
+if (cancelDelete) {
+  cancelDelete.addEventListener("click", () => {
+    deleteModal.style.display = "none";
+    bookToDelete = null;
+  });
+}
+
+if (confirmDelete) {
+  confirmDelete.addEventListener("click", async () => {
+    if (!bookToDelete) return;
+    try {
+      const res = await fetch(`${API_URL}/${bookToDelete}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete book");
+      showNotification("🗑️ Book deleted", "success");
+      fetchBooks();
+    } catch (err) {
+      console.error("Error deleting book:", err);
+      showNotification("❌ Failed to delete book", "error");
+    } finally {
+      deleteModal.style.display = "none";
+      bookToDelete = null;
+    }
+  });
+}
+
 /* ===== Initial Load ===== */
 fetchBooks();

@@ -218,7 +218,7 @@ router.post("/logout", (_req, res) => {
   res.redirect("/auth/login");
 });
 
-/* ------------------------ New: List all users (admin only) ------------------------ */
+/* ------------------------ List all users (admin only) ------------------------ */
 router.get("/users", requireAuth, async (req, res) => {
   try {
     if (req.user.role !== "admin") {

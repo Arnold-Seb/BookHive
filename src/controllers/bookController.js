@@ -1,6 +1,9 @@
 import Book from "../models/Book.js";
 import Loan from "../models/Loan.js";
 
+// helper: escape special regex chars so user input is safe in $regex
+const escapeRegex = (s = "") => s.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+
 /* ===== Get All Books ===== */
 export const getBooks = async (_req, res) => {
   try {
@@ -16,12 +19,21 @@ export const getBooks = async (_req, res) => {
 export const addBook = async (req, res) => {
   try {
     const { title, author, genre, quantity, status } = req.body;
-    const qVal = Number(quantity) || 0;
 
+    const t = (title || "").trim();
+    const a = (author || "").trim();
+    const g = (genre || "").trim();
+    if (!t || !a || !g) {
+      return res.status(400).json({ message: "Title, author and genre are required" });
+    }
+
+    const qVal = Number.isFinite(Number(quantity)) ? Number(quantity) : 0;
+
+    // case-insensitive exact match, but safely escaped
     let existingBook = await Book.findOne({
-      title: { $regex: `^${title.trim()}$`, $options: "i" },
-      author: { $regex: `^${author.trim()}$`, $options: "i" },
-      genre: { $regex: `^${genre.trim()}$`, $options: "i" },
+      title:  { $regex: new RegExp(`^${escapeRegex(t)}$`, "i") },
+      author: { $regex: new RegExp(`^${escapeRegex(a)}$`, "i") },
+      genre:  { $regex: new RegExp(`^${escapeRegex(g)}$`, "i") },
     });
 
     if (existingBook) {
@@ -30,6 +42,7 @@ export const addBook = async (req, res) => {
       if (req.file) {
         existingBook.pdfData = req.file.buffer.toString("base64");
         existingBook.pdfName = req.file.originalname;
+        // keep your chosen status if you set one; otherwise leave as-is
       }
       await existingBook.save();
       return res
@@ -38,11 +51,11 @@ export const addBook = async (req, res) => {
     }
 
     const newBook = new Book({
-      title: title.trim(),
-      author: author.trim(),
-      genre: genre.trim(),
+      title: t,
+      author: a,
+      genre: g,
       quantity: qVal,
-      status: status || "offline",
+      status: status || (req.file ? "online" : "offline"),
     });
 
     if (req.file) {
@@ -63,12 +76,21 @@ export const updateBook = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, author, genre, quantity, status } = req.body;
-    const qVal = Number(quantity) || 0;
+
+    const t = (title || "").trim();
+    const a = (author || "").trim();
+    const g = (genre || "").trim();
+
+    if (!t || !a || !g) {
+      return res.status(400).json({ message: "Title, author and genre are required" });
+    }
+
+    const qVal = Number.isFinite(Number(quantity)) ? Number(quantity) : 0;
 
     const update = {
-      title: title.trim(),
-      author: author.trim(),
-      genre: genre.trim(),
+      title: t,
+      author: a,
+      genre: g,
       quantity: qVal,
       status: status || "offline",
     };
@@ -76,16 +98,18 @@ export const updateBook = async (req, res) => {
     if (req.file) {
       update.pdfData = req.file.buffer.toString("base64");
       update.pdfName = req.file.originalname;
+      update.status = "online"; // auto-online when a new PDF is uploaded
     }
 
     const book = await Book.findById(id);
     if (!book) return res.status(404).json({ message: "Book not found" });
 
+    // find duplicate (excluding current) using safe, case-insensitive exact match
     const duplicate = await Book.findOne({
       _id: { $ne: id },
-      title: { $regex: `^${update.title}$`, $options: "i" },
-      author: { $regex: `^${update.author}$`, $options: "i" },
-      genre: { $regex: `^${update.genre}$`, $options: "i" },
+      title:  { $regex: new RegExp(`^${escapeRegex(t)}$`, "i") },
+      author: { $regex: new RegExp(`^${escapeRegex(a)}$`, "i") },
+      genre:  { $regex: new RegExp(`^${escapeRegex(g)}$`, "i") },
     });
 
     if (duplicate) {
