@@ -1,5 +1,4 @@
 # BookHive
-<<<<<<< HEAD
 
 ## 📚 BookHive Admin Panel
 
@@ -178,5 +177,3 @@ src/
 - 403 / Forbidden: log in as an email listed in ADMIN_EMAILS using ADMIN_PASSWORD.
 - PDF tests fail: ensure src/tests/sample.pdf exists and is a valid PDF.
 - Jest hangs: confirm Mongoose is closed in afterAll and that MONGODB_URI_TEST is reachable.
-=======
->>>>>>> 2a9177dcd3d363094fb6343bfe7710ffee94d809
