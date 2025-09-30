@@ -12,6 +12,7 @@ import {
   getBorrowStats,
   getActiveLoans   // ✅ new controller
 } from "../controllers/bookController.js";
+import { listReviews, upsertMyReview, deleteMyReview } from "../controllers/reviewController.js";
 import Book from "../models/Book.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 
@@ -38,6 +39,10 @@ router.patch("/:id/return", authMiddleware, returnBook);
 
 /* ---------- Active Loans for a Book ---------- */
 router.get("/:id/activeLoans", authMiddleware, getActiveLoans);
+/* ---------- Reviews ---------- */
+router.get("/:id/reviews", listReviews);                    // public
+router.post("/:id/reviews", authMiddleware, upsertMyReview); // user upsert
+router.delete("/:id/reviews/my", authMiddleware, deleteMyReview);
 
 /* ---------- PDF fetch ---------- */
 router.get("/:id/pdf", async (req, res) => {

@@ -1,4 +1,11 @@
 const API_URL = "/api/books";
+let currentReviewBookId = null;
+
+function renderStars(avg = 0, count = 0) {
+  const filled = Math.round(avg || 0);
+  const stars = Array.from({ length: 5 }, (_, i) => (i < filled ? "★" : "☆")).join("");
+  return `${stars} <span class="muted" style="font-size:12px;">(${count || 0})</span>`;
+}
 
 const resultsBody = document.getElementById("resultsBody");
 const notification = document.getElementById("notification");
@@ -9,9 +16,21 @@ const statTotal = document.getElementById("statTotal");
 const statAvailable = document.getElementById("statAvailable");
 const statBorrowed = document.getElementById("statBorrowed");
 
-// Modals
+// Borrow/Return Modals
 const borrowModal = document.getElementById("borrowModal");
 const returnModal = document.getElementById("returnModal");
+
+// ---- Review Modal elements (must exist in search.ejs) ----
+const reviewModal   = document.getElementById("reviewModal");
+const reviewRating  = document.getElementById("reviewRating");
+const reviewComment = document.getElementById("reviewComment");
+const cancelReview  = document.getElementById("cancelReview");
+const saveReview    = document.getElementById("saveReview");
+
+// ---- Reviews List Modal elements ----
+const reviewsListModal = document.getElementById("reviewsListModal");
+const reviewsListBody  = document.getElementById("reviewsListBody");
+const closeReviewsList = document.getElementById("closeReviewsList");
 
 // Loan history body (user only)
 const loanHistoryBody = document.getElementById("loanHistoryBody");
@@ -27,9 +46,7 @@ async function syncBorrowedBooks() {
     const res = await fetch("/api/books/history", { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch loan history");
     const history = await res.json();
-    borrowedBooks = new Set(
-      history.filter(h => !h.returnDate).map(h => h.bookId?._id)
-    );
+    borrowedBooks = new Set(history.filter(h => !h.returnDate).map(h => h.bookId?._id));
   } catch (err) {
     console.error("Error syncing borrowed books:", err);
   }
@@ -87,6 +104,15 @@ function renderBooks(books) {
       <td>${book.genre || "—"}</td>
       <td>${book.quantity ?? 0}</td>
       <td>${statusText}</td>
+      <td>
+        <span class="rating-cell"
+              data-action="open-reviews"
+              data-id="${book._id}"
+              style="cursor:pointer;"
+              title="View all reviews">
+          ${renderStars(book.ratingAvg, book.ratingCount)}
+        </span>
+      </td>
     `;
 
     if (!isAdmin) {
@@ -94,11 +120,14 @@ function renderBooks(books) {
         <td>
           <div class="actions-cell">
             <button class="btn-request" data-id="${book._id}" ${(!available || isBorrowed) ? "disabled" : ""}>Request</button>
-            <button class="btn-return" data-id="${book._id}" ${isBorrowed ? "" : "disabled"}>Return</button>
+            <button class="btn-return"  data-id="${book._id}" ${isBorrowed ? "" : "disabled"}>Return</button>
+            <button class="btn"         data-action="review"        data-id="${book._id}">Review</button>
+            <button class="btn-view"    data-action="view-reviews"  data-id="${book._id}">View</button>
           </div>
         </td>
       `;
     }
+
 
     const row = document.createElement("tr");
     row.innerHTML = rowHtml;
@@ -110,7 +139,7 @@ function renderBooks(books) {
 }
 
 /* -------- Event delegation for row buttons -------- */
-resultsBody.addEventListener("click", (e) => {
+resultsBody.addEventListener("click", async (e) => {
   if (isAdmin) return;
 
   const requestBtn = e.target.closest(".btn-request");
@@ -124,6 +153,35 @@ resultsBody.addEventListener("click", (e) => {
   if (returnBtn && !returnBtn.disabled) {
     selectedBookId = returnBtn.dataset.id;
     returnModal.style.display = "flex";
+    return;
+  }
+
+  // ---- Open Review modal ----
+  const reviewBtn = e.target.closest('[data-action="review"]');
+  if (reviewBtn) {
+    currentReviewBookId = reviewBtn.dataset.id;
+    if (reviewRating)  reviewRating.value = "";
+    if (reviewComment) reviewComment.value = "";
+    if (reviewModal)   reviewModal.style.display = "flex";
+
+    // Optional: prefill my existing review if present
+    try {
+      const res = await fetch(`${API_URL}/${currentReviewBookId}/reviews`, { credentials: "include" });
+      const items = await res.json().catch(() => []);
+      const me = (window.CURRENT_USER_EMAIL || "").toLowerCase();
+      const mine = items.find(r => (r.userId?.email || "").toLowerCase() === me);
+      if (mine) {
+        if (reviewRating)  reviewRating.value = mine.rating;
+        if (reviewComment) reviewComment.value = mine.comment || "";
+      }
+    } catch {}
+    return;
+  }
+
+  // ---- Open Reviews List modal ----
+  const viewBtn = e.target.closest('[data-action="view-reviews"]');
+  if (viewBtn) {
+    openReviewsList(viewBtn.dataset.id);
     return;
   }
 });
@@ -192,6 +250,96 @@ document.addEventListener("click", async (e) => {
       selectedBookId = null;
     }
   }
+});
+
+/* -------- Review modal: save & cancel -------- */
+if (cancelReview) {
+  cancelReview.addEventListener("click", () => {
+    if (reviewModal) reviewModal.style.display = "none";
+    currentReviewBookId = null;
+  });
+}
+
+if (saveReview) {
+  saveReview.addEventListener("click", async () => {
+    if (!currentReviewBookId) return;
+
+    const rating  = Number(reviewRating?.value || 0);
+    const comment = (reviewComment?.value || "").trim();
+
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+      showNotification("❌ Rating must be between 1 and 5", "error");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/${currentReviewBookId}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ rating, comment })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "Failed to save review");
+
+      showNotification("⭐ Review saved", "success");
+      await fetchBooks(); // refresh stars (avg & count)
+    } catch (err) {
+      console.error(err);
+      showNotification("❌ " + err.message, "error");
+    } finally {
+      if (reviewModal) reviewModal.style.display = "none";
+      currentReviewBookId = null;
+    }
+  });
+}
+
+/* ---- Reviews list modal helpers ---- */
+function starsInline(n = 0) {
+  const s = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
+  return Array.from({ length: 5 }, (_, i) => (i < s ? "★" : "☆")).join("");
+}
+
+async function openReviewsList(bookId) {
+  if (!reviewsListModal || !reviewsListBody) return;
+  reviewsListBody.innerHTML = "<div class='muted'>Loading…</div>";
+  reviewsListModal.style.display = "flex";
+  try {
+    const res = await fetch(`${API_URL}/${bookId}/reviews`, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to load reviews");
+    const items = await res.json();
+    if (!items.length) {
+      reviewsListBody.innerHTML = "<div class='muted'>No reviews yet.</div>";
+      return;
+    }
+    reviewsListBody.innerHTML = items.map(r => {
+      const name = r.userId?.name || r.userId?.email || "Anonymous";
+      const when = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "";
+      const comment = (r.comment || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return `
+        <div class="review-item" style="padding:10px 0; border-bottom:1px solid #eee;">
+          <div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">
+            <strong>${name}</strong>
+            <span>${starsInline(r.rating)}</span>
+          </div>
+          ${comment ? `<div style="margin-top:6px;">${comment}</div>` : ""}
+          <div class="muted" style="margin-top:4px; font-size:12px;">${when}</div>
+        </div>
+      `;
+    }).join("");
+  } catch (e) {
+    console.error(e);
+    reviewsListBody.innerHTML = "<div class='muted'>Failed to load reviews.</div>";
+  }
+}
+
+if (closeReviewsList) {
+  closeReviewsList.addEventListener("click", () => {
+    reviewsListModal.style.display = "none";
+  });
+}
+window.addEventListener("click", (e) => {
+  if (e.target === reviewsListModal) reviewsListModal.style.display = "none";
 });
 
 /* ---------------- Loan history (user only) ---------------- */

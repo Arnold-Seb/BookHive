@@ -329,6 +329,72 @@ html.dark .modal-content {
 .btn-confirm { background: linear-gradient(135deg,#6366f1,#4338ca); color: #fff; }
 .btn-cancel:hover { background: #6b7280; }
 .btn-confirm:hover { background: #4f46e5; }
+/* --- Review modal inputs: keep light background in both themes --- */
+#reviewModal .modal-content input[type="number"],
+#reviewModal .modal-content textarea {
+  background: #ffffff !important;
+  color: #111827 !important;      /* slate-900 */
+  border: 1px solid #cbd5e1;      /* slate-300 */
+  border-radius: 8px;
+  padding: 8px 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* optional: placeholder color */
+#reviewModal .modal-content input::placeholder,
+#reviewModal .modal-content textarea::placeholder {
+  color: #9ca3af;                 /* slate-400 */
+}
+
+/* optional: focus ring */
+#reviewModal .modal-content input:focus,
+#reviewModal .modal-content textarea:focus {
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.25); /* indigo focus ring */
+  border-color: #818cf8; /* indigo-400 */
+}
+
+/* Prevent cell text from overlapping other columns */
+#resultsTable {
+  table-layout: fixed;   /* key: columns get fixed widths */
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#resultsTable th,
+#resultsTable td {
+  padding: 10px 12px;
+  vertical-align: middle;
+}
+
+/* Truncate long text nicely */
+#resultsTable td,
+#resultsTable th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Sensible widths per column (adjust if you like) */
+#resultsTable th:nth-child(1), #resultsTable td:nth-child(1) { width: 26%; } /* Title */
+#resultsTable th:nth-child(2), #resultsTable td:nth-child(2) { width: 22%; } /* Author */
+#resultsTable th:nth-child(3), #resultsTable td:nth-child(3) { width: 18%; } /* Genre */
+#resultsTable th:nth-child(4), #resultsTable td:nth-child(4) { width: 9%;  } /* Quantity */
+#resultsTable th:nth-child(5), #resultsTable td:nth-child(5) { width: 11%; } /* Status */
+#resultsTable th:nth-child(6), #resultsTable td:nth-child(6) { width: 8%;  } /* Rating */
+#resultsTable th:nth-child(7), #resultsTable td:nth-child(7) { width: 16%; } /* Actions (if present) */
+
+/* Actions cell wrapping so buttons don't clip */
+#resultsTable td .actions-cell {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+
 
 @keyframes popup {
   from { transform: scale(0.9); opacity: 0; }
