@@ -16,6 +16,9 @@ const bookSchema = new mongoose.Schema(
 
     // borrowed tracking
     borrowedBy: [{ type: String, default: [] }],  // store user emails
+    // ratings snapshot (kept in sync on review writes)
+    ratingAvg:   { type: Number, default: 0 },   // 0–5
+    ratingCount: { type: Number, default: 0 },
 
     // helper fields
     titleLower:  { type: String },
