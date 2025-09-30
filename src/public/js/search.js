@@ -1,4 +1,11 @@
 const API_URL = "/api/books";
+let currentReviewBookId = null;
+
+function renderStars(avg = 0, count = 0) {
+  const filled = Math.round(avg);
+  const stars = Array.from({ length: 5 }, (_, i) => (i < filled ? "★" : "☆")).join("");
+  return `${stars} <span class="muted" style="font-size:12px;">(${count})</span>`;
+}
 
 const resultsBody = document.getElementById("resultsBody");
 const notification = document.getElementById("notification");
@@ -12,6 +19,13 @@ const statBorrowed = document.getElementById("statBorrowed");
 // Modals
 const borrowModal = document.getElementById("borrowModal");
 const returnModal = document.getElementById("returnModal");
+
+// ---- Review Modal elements ----
+const reviewModal   = document.getElementById("reviewModal");
+const reviewRating  = document.getElementById("reviewRating");
+const reviewComment = document.getElementById("reviewComment");
+const cancelReview  = document.getElementById("cancelReview");
+const saveReview    = document.getElementById("saveReview");
 
 // Loan history body (user only)
 const loanHistoryBody = document.getElementById("loanHistoryBody");
@@ -87,6 +101,7 @@ function renderBooks(books) {
       <td>${book.genre || "—"}</td>
       <td>${book.quantity ?? 0}</td>
       <td>${statusText}</td>
+      <td>${renderStars(book.ratingAvg, book.ratingCount)}</td>
     `;
 
     if (!isAdmin) {
@@ -95,6 +110,7 @@ function renderBooks(books) {
           <div class="actions-cell">
             <button class="btn-request" data-id="${book._id}" ${(!available || isBorrowed) ? "disabled" : ""}>Request</button>
             <button class="btn-return" data-id="${book._id}" ${isBorrowed ? "" : "disabled"}>Return</button>
+            <button class="btn" data-action="review" data-id="${book._id}">Review</button>
           </div>
         </td>
       `;
@@ -126,119 +142,18 @@ resultsBody.addEventListener("click", (e) => {
     returnModal.style.display = "flex";
     return;
   }
+
+  // ---- Open Review modal ----
+  const reviewBtn = e.target.closest('[data-action="review"]');
+  if (reviewBtn) {
+    currentReviewBookId = reviewBtn.dataset.id;
+    if (reviewRating)  reviewRating.value = "";
+    if (reviewComment) reviewComment.value = "";
+    if (reviewModal)   reviewModal.style.display = "flex";
+    return;
+  }
 });
 
 /* -------- Event delegation for modal buttons -------- */
 document.addEventListener("click", async (e) => {
   if (isAdmin) return;
-
-  // cancel borrow
-  if (e.target.id === "cancelBorrow") {
-    borrowModal.style.display = "none";
-    selectedBookId = null;
-    return;
-  }
-
-  // confirm borrow
-  if (e.target.id === "confirmBorrow") {
-    if (!selectedBookId) return;
-    try {
-      const res = await fetch(`/api/books/${selectedBookId}/borrow`, {
-        method: "PATCH",
-        credentials: "include"
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "Failed to borrow");
-      showNotification("✅ Book borrowed successfully", "success");
-      await syncBorrowedBooks();
-      await fetchBooks();
-      await fetchLoanHistory();
-    } catch (err) {
-      console.error(err);
-      showNotification("❌ " + err.message, "error");
-    } finally {
-      borrowModal.style.display = "none";
-      selectedBookId = null;
-    }
-    return;
-  }
-
-  // cancel return
-  if (e.target.id === "cancelReturn") {
-    returnModal.style.display = "none";
-    selectedBookId = null;
-    return;
-  }
-
-  // confirm return
-  if (e.target.id === "confirmReturn") {
-    if (!selectedBookId) return;
-    try {
-      const res = await fetch(`/api/books/${selectedBookId}/return`, {
-        method: "PATCH",
-        credentials: "include"
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "Failed to return");
-      showNotification("✅ Book returned successfully", "success");
-      await syncBorrowedBooks();
-      await fetchBooks();
-      await fetchLoanHistory();
-    } catch (err) {
-      console.error(err);
-      showNotification("❌ " + err.message, "error");
-    } finally {
-      returnModal.style.display = "none";
-      selectedBookId = null;
-    }
-  }
-});
-
-/* ---------------- Loan history (user only) ---------------- */
-async function fetchLoanHistory() {
-  if (isAdmin || !loanHistoryBody) return;
-  try {
-    const res = await fetch("/api/books/history", { credentials: "include" });
-    if (!res.ok) throw new Error("Failed to fetch loan history");
-    const history = await res.json();
-
-    loanHistoryBody.innerHTML = "";
-    if (!history || history.length === 0) {
-      loanHistoryBody.innerHTML = "<tr><td colspan='4'>No past loans found</td></tr>";
-      return;
-    }
-
-    history.forEach(loan => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${loan.bookId?.title || "—"}</td>
-        <td>${loan.borrowDate ? new Date(loan.borrowDate).toLocaleDateString() : "-"}</td>
-        <td>${loan.returnDate ? new Date(loan.returnDate).toLocaleDateString() : "-"}</td>
-        <td>${loan.returnDate ? "✅ Returned" : "⏳ Borrowed"}</td>
-      `;
-      loanHistoryBody.appendChild(row);
-    });
-  } catch (err) {
-    console.error("Error fetching loan history:", err);
-  }
-}
-
-/* ---------------- Notifications ---------------- */
-function showNotification(msg, type) {
-  notification.textContent = msg;
-  notification.className = type === "error" ? "error show" : "success show";
-  setTimeout(() => notification.classList.remove("show"), 2500);
-}
-
-/* ===== Search Input ===== */
-const searchBox = document.getElementById("searchBox");
-if (searchBox) {
-  searchBox.addEventListener("input", (e) => {
-    searchQuery = e.target.value.toLowerCase();
-    fetchBooks();
-  });
-}
-
-/* ---------------- Init ---------------- */
-fetchBooks();
-fetchLoanHistory();
