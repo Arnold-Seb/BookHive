@@ -8,9 +8,8 @@ const notification = document.getElementById("notification");
 const borrowModal = document.getElementById("borrowModal");
 const cancelBorrow = document.getElementById("cancelBorrow");
 const confirmBorrow = document.getElementById("confirmBorrow");
-
 let bookToBorrow = null;
-const CURRENT_USER_NAME = "Student"; // Replace with dynamic student name if available
+const CURRENT_USER_NAME = "Student"; // replace with dynamic session if available
 
 // Fetch books from server
 async function fetchBooks() {
@@ -27,7 +26,7 @@ async function fetchBooks() {
 // Render book table
 function renderBooks(books) {
   booksTable.innerHTML = "";
-  books.forEach((book) => {
+  books.forEach(book => {
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${book.title}</td>
@@ -62,16 +61,24 @@ cancelBorrow.addEventListener("click", () => {
 confirmBorrow.addEventListener("click", async () => {
   if (!bookToBorrow) return;
 
+  const days = parseInt(document.getElementById("borrowDays").value) || 0;
+  const minutes = parseInt(document.getElementById("borrowMinutes").value) || 0;
+
   try {
     const res = await fetch(BORROW_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookId: bookToBorrow, studentName: CURRENT_USER_NAME }),
+      body: JSON.stringify({ 
+        bookId: bookToBorrow, 
+        studentName: CURRENT_USER_NAME,
+        days,
+        minutes
+      }),
     });
     if (!res.ok) throw new Error("Failed to borrow book");
 
     showNotification("✅ Book borrowed successfully", "success");
-    fetchBooks(); // refresh table
+    fetchBooks();
   } catch (error) {
     console.error(error);
     showNotification("❌ Failed to borrow book", "error");
@@ -100,7 +107,7 @@ function showNotification(message, type) {
 }
 
 // Close modal if clicked outside
-window.addEventListener("click", (e) => {
+window.addEventListener("click", e => {
   if (e.target === borrowModal) borrowModal.style.display = "none";
 });
 
