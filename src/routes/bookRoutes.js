@@ -12,7 +12,7 @@ import {
   getBorrowStats,
   getActiveLoans   // ✅ new controller
 } from "../controllers/bookController.js";
-import { listReviews, upsertMyReview, deleteMyReview } from "./controllers/reviewController.js";
+import { listReviews, upsertMyReview, deleteMyReview } from "../controllers/reviewController.js";
 import Book from "../models/Book.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 

@@ -49,7 +49,7 @@
   </section>
 
   <!-- Results -->
-  <section class="glass">
+  <section class="glass results">
     <div style="display:flex;justify-content:space-between;align-items:center; margin-bottom:10px;">
       <h3 style="margin:0;">Results</h3>
       <div class="muted">Hi, <%= user?.name || user?.email %> (<%= user?.role %>)</div>
@@ -62,6 +62,7 @@
           <th>Genre</th>
           <th>Quantity</th>
           <th>Status</th>
+          <th>Rating</th>
           <% if (user && user.role !== 'admin') { %>
             <th>Actions</th>
           <% } %>
@@ -82,7 +83,6 @@
           <th>Borrow Date</th>
           <th>Return Date</th>
           <th>Status</th>
-          <th>Rating</th>
         </tr>
       </thead>
       <tbody id="loanHistoryBody">
@@ -135,6 +135,16 @@
     </div>
   </div>
 
+  <!-- Reviews List Modal -->
+  <div id="reviewsListModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h2 style="margin-top:0">Reviews</h2>
+      <div id="reviewsListBody" style="max-height:300px; overflow:auto;"></div>
+      <div class="modal-actions" style="margin-top:14px;">
+        <button type="button" id="closeReviewsList" class="btn-cancel">Close</button>
+      </div>
+    </div>
+  </div>
 
   <div id="notification"></div>
 
@@ -146,6 +156,100 @@
     window.CURRENT_USER_EMAIL = "<%= user?.email %>";
     window.CURRENT_USER_ROLE = "<%= user?.role %>";
   </script>
+
   <script src="/js/search.js"></script>
+
+  <style>
+    /* Expand the results container (override .glass max-width from style.css) */
+    .glass.results {
+      max-width: 1400px !important;
+      width: min(98vw, 1400px);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Table: use full width & prevent overlap */
+    #resultsTable {
+      width: 100%;
+      table-layout: fixed;           /* keeps columns from bleeding */
+      border-collapse: collapse;
+    }
+
+    #resultsTable th,
+    #resultsTable td {
+      padding: 12px 14px;
+      vertical-align: middle;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 15px;
+    }
+
+    /* Let headers wrap so labels don't clip (e.g., Quantity) */
+    #resultsTable th {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+    }
+
+    /* Column widths (looser) */
+    #resultsTable th:nth-child(1), #resultsTable td:nth-child(1) { width: 24%; } /* Title   */
+    #resultsTable th:nth-child(2), #resultsTable td:nth-child(2) { width: 22%; } /* Author  */
+    #resultsTable th:nth-child(3), #resultsTable td:nth-child(3) { width: 16%; } /* Genre   */
+    #resultsTable th:nth-child(4), #resultsTable td:nth-child(4) { width: 10%; } /* Quantity*/
+    #resultsTable th:nth-child(5), #resultsTable td:nth-child(5) { width: 12%; } /* Status  */
+    #resultsTable th:nth-child(6), #resultsTable td:nth-child(6) { width: 8%;  } /* Rating  */
+    #resultsTable th:nth-child(7), #resultsTable td:nth-child(7) { width: 18%; } /* Actions */
+
+    /* Center numeric/icon-ish columns */
+    #resultsTable td:nth-child(4),
+    #resultsTable td:nth-child(5),
+    #resultsTable td:nth-child(6) { text-align: center; }
+
+    /* Actions: never clip; wrap if needed */
+    #resultsTable td .actions-cell {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;               /* allow wrapping */
+      justify-content: flex-end;
+      align-items: center;
+    }
+    #resultsTable td { overflow: visible; }
+
+    /* Compact action buttons */
+    #resultsTable td .actions-cell .btn,
+    #resultsTable td .actions-cell .btn-request,
+    #resultsTable td .actions-cell .btn-return,
+    #resultsTable td .actions-cell .btn-view {
+      padding: 6px 10px;
+      font-size: 12px;
+      line-height: 1.1;
+    }
+
+    /* keep review inputs readable in dark mode */
+    #reviewModal .modal-content input[type="number"],
+    #reviewModal .modal-content textarea {
+      background: #fff !important;
+      color: #111827 !important;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Optional: widen other glass sections a bit too for visual consistency */
+    .glass:not(.results) {
+      max-width: 1200px;
+      width: min(96vw, 1200px);
+    }
+
+    @media (max-width: 900px) {
+      /* give Actions extra room on narrow screens */
+      #resultsTable th:nth-child(7), #resultsTable td:nth-child(7) { width: 22%; }
+      #resultsTable th:nth-child(1), #resultsTable td:nth-child(1) { width: 22%; }
+      #resultsTable th:nth-child(2), #resultsTable td:nth-child(2) { width: 18%; }
+    }
+  </style>
 </body>
 </html>
