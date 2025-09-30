@@ -116,6 +116,26 @@
     </div>
   </div>
 
+  <!-- Review Modal -->
+  <div id="reviewModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h2>Rate & Review</h2>
+      <div style="margin:8px 0;">
+        <label>Rating (1–5): </label>
+        <input id="reviewRating" type="number" min="1" max="5" step="1"/>
+      </div>
+      <div style="margin:8px 0;">
+        <label>Comment: </label>
+        <textarea id="reviewComment" rows="4" style="width:100%;"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="cancelReview" class="btn-cancel">Cancel</button>
+        <button type="button" id="saveReview" class="btn-confirm">Save</button>
+      </div>
+    </div>
+  </div>
+
+
   <div id="notification"></div>
 
   <footer>
