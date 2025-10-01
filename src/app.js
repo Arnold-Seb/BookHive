@@ -14,6 +14,10 @@ import { connectDB } from "./config/db.js";
 import { JWT_SECRET } from "./config/secrets.js";
 import bookRoutes from "./routes/bookRoutes.js";
 import authRoutes from "./routes/auth.js";
+import "./cron/borrowReminder.js";
+
+
+
 import borrowRoutes from "./routes/borrow.js";
 
 dotenv.config();
@@ -68,10 +72,9 @@ app.use("/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/borrow", borrowRoutes);
 
-app.get("/", (req, res) => {
-  res.clearCookie("token");
-  return res.redirect("/auth/login");
-});
+
+
+app.get("/", (_req, res) => res.redirect("/auth/login"));
 
 /* ---------- Search Page ---------- */
 app.get("/search", (req, res) => {
