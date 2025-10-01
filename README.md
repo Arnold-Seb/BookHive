@@ -91,6 +91,25 @@ Open: http://localhost:3000
 - View PDF: click “📄 View PDF” to open the embedded viewer.
 - Search & Filters: quickly narrow by text, Status (all/online/offline), and Availability.
 
+🎓 Student Panel Guide
+- **Login**: Access via `/student` (requires student login).  
+- **View Books**: Browse a list of all available books with title, author, genre, and current stock.  
+- **Borrow Book**:  
+  - Select a book and specify a **borrow duration**.  
+  - System decreases available quantity in real time.  
+- **Borrowed Books Dashboard**:  
+  - Displays list of borrowed books with quantity, borrow date, due date.  
+  - Shows a **real-time countdown timer** until the due date.  
+  - Visual status indicators: 🟢 *On Time*, 🟠 *Due Soon*, 🔴 *Overdue*.  
+- **Pop-up Notifications**:  
+  - Reminder notification shown on page load when due date is near.  
+  - Overdue books trigger a clear “Overdue” pop-up warning.  
+- **Email Notifications**:  
+  - Automatic email reminder if a book is due within 24 hours.  
+  - Overdue books trigger a follow-up **warning email** until returned.
+ 
+  - 
+
 ### 📚 Loan History
 - User history: ` GET /api/books/history ` returns loans for the authenticated user (most recent first).
 - Active loans for a book (admin): ` GET /api/books/:id/activeLoans ` lists current borrowers.
