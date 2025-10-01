@@ -91,7 +91,7 @@ Open: http://localhost:3000
 - View PDF: click “📄 View PDF” to open the embedded viewer.
 - Search & Filters: quickly narrow by text, Status (all/online/offline), and Availability.
 
-🎓 Student Panel Guide
+###🎓 Student Panel Guide
 - **Login**: Access via `/student` (requires student login).  
 - **View Books**: Browse a list of all available books with title, author, genre, and current stock.  
 - **Borrow Book**:  
@@ -108,7 +108,6 @@ Open: http://localhost:3000
   - Automatic email reminder if a book is due within 24 hours.  
   - Overdue books trigger a follow-up **warning email** until returned.
  
-  - 
 
 ### 📚 Loan History
 - User history: ` GET /api/books/history ` returns loans for the authenticated user (most recent first).
