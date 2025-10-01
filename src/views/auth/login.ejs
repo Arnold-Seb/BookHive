@@ -1,116 +1,215 @@
 <!DOCTYPE html>
+<!-- Use HTML5 standards mode. -->
+
 <html lang="en">
+<!-- Root element; lang helps accessibility and SEO. -->
+
 <head>
   <meta charset="UTF-8" />
+  <!-- UTF-8 character encoding so all common characters display correctly. -->
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Make layout responsive to device width and zoom. -->
+
   <meta name="color-scheme" content="light dark">
+  <!-- Hint that the page supports both light and dark themes. -->
+
   <title><%= title || 'Login · BookHive' %></title>
+  <!-- EJS: use server-provided title; fallback to “Login · BookHive”. -->
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <!-- Load Inter & Poppins web fonts. -->
+
   <link href="/css/style.css" rel="stylesheet">
+  <!-- Main site stylesheet with the app’s look and feel. -->
 
   <style>
     .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:18px 20px;max-width:700px;margin:0 auto}
+    /* A reusable “card” container (light theme). */
+
     html.dark .card{background:rgba(31,41,55,.65);border:1px solid rgba(255,255,255,.1)}
+    /* Dark theme version of the card (semi-transparent). */
+
     .row{display:flex;gap:10px;align-items:center}
+    /* Flex row utility for inline items (used by the admin checkbox). */
+
     .muted{color:#6b7280;font-size:.92rem}
+    /* Subtle text style for secondary information. */
+
+    /* NEW: inline logout button used on the logged-in card */
+    .btn-logout {
+      background:#ef4444;
+      color:#fff;
+      border:none;
+      padding:8px 14px;
+      border-radius:6px;
+      cursor:pointer;
+      font-weight:600;
+    }
+    .btn-logout:hover { background:#dc2626; transition:background .15s ease-in-out; }
   </style>
 
   <script>
     (function(){ try{
       document.documentElement.classList.toggle('dark', localStorage.getItem('bh-dark')==='1');
+      // Early theme bootstrap: apply dark mode before paint if user chose it previously.
     }catch(e){} })();
+    // IIFE + try/catch prevents errors if localStorage is blocked.
   </script>
 </head>
+
 <body>
   <header>
     <h1>📚BookHive</h1>
+    <!-- Brand/Logo. -->
+
     <div class="header-actions">
-      <% if (user) { %>
+      <% if (user) { %> <!-- If logged in, show a user menu instead of the login form. -->
         <div class="user-menu" id="userMenu">
           <button type="button" class="user-btn" id="userBtn" aria-haspopup="menu" aria-expanded="false">
+            <!-- Menu button: ARIA attributes declare it opens a menu and track open state. -->
+
             <span class="avatar"><%= (user.name && user.name[0]) || (user.email && user.email[0]) || 'U' %></span>
+            <!-- Small avatar: initial letter from name/email, fallback “U”. -->
+
             <span class="user-label"><%= user.name || user.email %></span>
+            <!-- Text label showing the user’s name or email. -->
+
             <span class="caret" aria-hidden="true">▾</span>
+            <!-- Decorative caret to indicate dropdown (hidden from screen readers). -->
           </button>
+
           <div class="menu" role="menu" aria-labelledby="userBtn">
+            <!-- The dropdown menu; ARIA ties it to the button. -->
             <a href="/hub" role="menuitem">Digital Hub</a>
             <a href="/account" role="menuitem">Manage Account</a>
             <form action="/auth/logout" method="post"><button type="submit" role="menuitem">Logout</button></form>
+            <!-- Logout is a POST form for proper state-changing action. -->
           </div>
         </div>
       <% } %>
 
       <label class="switch" title="Toggle dark mode" tabindex="0" role="switch" aria-checked="false" id="darkSwitch">
+        <!-- Accessible theme toggle with keyboard focus and ARIA role/state. -->
         <input id="darkToggle" type="checkbox" />
+        <!-- Actual control; we sync its checked state with the theme. -->
         <span class="slider"></span>
+        <!-- Visual slider track/knob (styled in CSS). -->
       </label>
     </div>
   </header>
 
   <section class="glass" style="max-width:900px;">
-    <h2 style="margin:0 0 14px 0;">Login</h2>
+    <!-- Main content area using your glassmorphism style; width capped for readability. -->
 
-    <% if (user) { %>
+    <h2 style="margin:0 0 14px 0;">Login</h2>
+    <!-- Section title. -->
+
+    <% if (user) { %> <!-- If already logged in, don’t show the form — just info. -->
       <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
         <div class="muted">You’re logged in as <strong><%= user.email %></strong> (<%= user.role %>).</div>
+        <!-- Friendly message showing current identity and role. -->
+
+        <!-- NEW: inline Logout button while on login page -->
+        <form action="/auth/logout" method="post" style="margin:0;">
+          <button type="submit" class="btn-logout">Logout</button>
+        </form>
       </div>
-    <% } else { %>
+    <% } else { %> <!-- Otherwise, show the login form. -->
 
       <% if (error) { %>
         <div id="notification" class="show error" style="position:static;opacity:1;right:auto;margin-bottom:10px;"><%= error %></div>
+        <!-- Server-side error (e.g., “Invalid credentials”) appears above the form. -->
       <% } %>
 
       <div class="card">
         <form action="/auth/login" method="post" novalidate>
+          <!-- Login form posts to /auth/login; `novalidate` lets server control messages. -->
+
           <input id="email" name="email" type="email" placeholder="Email"
                  value="<%= (form && form.email) ? form.email : '' %>" required>
+          <!-- Email field; EJS repopulates last value on error for better UX. -->
+
           <input id="password" name="password" type="password" placeholder="Password" required minlength="6">
+          <!-- Password field; client hint of minlength=6 (server also validates). -->
 
           <label class="row" style="margin-top:4px;">
-            <!-- Checkbox submits "on" when checked -->
+            <!-- Wrap checkbox/label in a flex row for alignment. -->
             <input type="checkbox" name="asAdmin" <%= (form && form.asAdmin) ? 'checked' : '' %> >
+            <!-- If checked, the request attempts admin login path. Value normalised server-side. -->
             <span>Login as admin</span>
           </label>
 
           <button type="submit">Log in</button>
+          <!-- Submit the credentials. -->
+
           <p class="muted" style="margin:10px 0 0;text-align:right;">
             New here? <a href="/auth/signup">Create an account</a>
           </p>
+          <!-- Link to the signup page for new users. -->
         </form>
       </div>
     <% } %>
   </section>
 
   <footer>© BookHive</footer>
+  <!-- Simple footer. -->
 
   <script>
     (function(){
       var KEY='bh-dark';
+      // Storage key for theme preference.
+
       function set(flag){
         document.documentElement.classList.toggle('dark', !!flag);
+        // Add/remove the 'dark' class on <html>.
+
         try{ localStorage.setItem(KEY, flag ? '1':'0'); }catch(e){}
+        // Persist preference (guarded against storage errors).
+
         var t=document.getElementById('darkToggle');
         var sw=document.getElementById('darkSwitch');
         if(t){ t.checked = !!flag; }
+        // Keep the checkbox UI in sync with the theme.
+
         if(sw){ sw.setAttribute('aria-checked', !!flag); }
+        // Update ARIA state for assistive tech.
       }
+
       document.addEventListener('DOMContentLoaded', function(){
+        // Initialize theme and menu behaviors once DOM is ready.
+
         var saved=false; try{ saved = localStorage.getItem(KEY)==='1'; }catch(e){}
+        // Read saved theme preference (defaults to light).
+
         set(saved);
+        // Apply saved theme.
+
         var t=document.getElementById('darkToggle');
         if(t){ t.addEventListener('change', e => set(e.target.checked)); }
+        // Toggle theme when the checkbox changes.
 
         var menuWrap=document.getElementById('userMenu');
         var btn=document.getElementById('userBtn');
         if(btn && menuWrap){
           function close(){ menuWrap.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
+          // Close the menu and update ARIA state.
+
           function toggle(){ var o=menuWrap.classList.toggle('open'); btn.setAttribute('aria-expanded', String(o)); }
+          // Toggle menu visibility; keep aria-expanded accurate.
+
           btn.addEventListener('click', toggle);
+          // Click button to open/close the menu.
+
           document.addEventListener('click', (ev) => { if(!menuWrap.contains(ev.target)) close(); });
+          // Click anywhere outside the menu closes it.
+
           document.addEventListener('keydown', (ev) => { if(ev.key==='Escape') close(); });
+          // Press Escape to close (accessibility/convenience).
         }
       });
     })();
+    // IIFE: isolates variables; sets up theme persistence and user-menu UX safely.
   </script>
 </body>
 </html>

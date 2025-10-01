@@ -1,89 +1,168 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
+<!-- Tell the browser to use HTML5 standards mode. -->
+
 <html lang="en">
+<!-- Root element; lang attribute helps screen readers and SEO. -->
+
 <head>
   <meta charset="UTF-8" />
+  <!-- Use UTF-8 so all common characters render correctly. -->
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Make layout responsive: set the viewport to device width and 1.0 zoom. -->
+
   <meta name="color-scheme" content="light dark">
+  <!-- Hint to the browser that the page supports both light and dark themes. -->
+
   <title><%= title || 'Sign up · BookHive' %></title>
+  <!-- EJS: use the server-provided title; fallback if undefined. -->
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+  <!-- Load Inter and Poppins fonts from Google Fonts. -->
+
   <link href="/css/style.css" rel="stylesheet">
+  <!-- Main site stylesheet (global layout, colors, components). -->
+
   <style>
     .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:18px 20px;max-width:700px;margin:0 auto}
+    /* Card container in light mode: white background, subtle border, rounded corners. */
+
     html.dark .card{background:rgba(31,41,55,.65);border:1px solid rgba(255,255,255,.1)}
+    /* Card container in dark mode: semi-transparent dark background and faint border. */
+
     .muted{color:#6b7280;font-size:.92rem}
+    /* Utility text style for secondary text. */
   </style>
+
   <script>
     (function(){ try{
       document.documentElement.classList.toggle('dark', localStorage.getItem('bh-dark')==='1');
+      // Early theme bootstrap: before first paint, apply dark mode if user chose it previously.
     }catch(e){} })();
   </script>
+  <!-- IIFE with try/catch: prevents console errors if localStorage is blocked. -->
 </head>
+
 <body>
   <header>
     <h1>📚BookHive</h1>
+    <!-- App brand/logo in the header. -->
+
     <div class="header-actions">
       <% if (user) { %>
+        <!-- EJS: If a user is logged in, show a Logout button. -->
         <form action="/auth/logout" method="post">
           <button type="submit" class="logout-btn">Logout</button>
         </form>
       <% } %>
+
       <label class="switch" title="Toggle dark mode" tabindex="0" role="switch" aria-checked="false" id="darkSwitch">
+        <!-- Accessible dark-mode switch: keyboard focusable, has role and ARIA state. -->
         <input id="darkToggle" type="checkbox" />
+        <!-- The actual checkbox control; we sync its checked state with the theme. -->
         <span class="slider"></span>
+        <!-- The visual slider knob/track (styled in CSS). -->
       </label>
     </div>
   </header>
 
   <section class="glass" style="max-width:900px;">
+    <!-- Main content section with your glassmorphism style; width constrained for readability. -->
+
     <h2 style="margin:0 0 14px 0;">Create your account</h2>
+    <!-- Section heading. -->
 
     <% if (error) { %>
+      <!-- EJS: If the server passed an error message (e.g., validation), display it. -->
       <div id="notification" class="show error" style="position:static;opacity:1;right:auto;margin-bottom:10px;"><%= error %></div>
     <% } %>
 
     <div class="card">
+      <!-- Visual card wrapper for the form. -->
+
       <form action="/auth/signup" method="post" id="signupForm" novalidate>
+        <!-- Signup form posts to /auth/signup; 'novalidate' gives you control of validation UX. -->
+
         <input id="name" name="name" type="text" placeholder="Full name" required
                value="<%= (form && form.name) ? form.name : '' %>">
+        <!-- Name field (required).
+             EJS puts back the user's last-typed value if a server-side error occurs. -->
+
         <input id="email" name="email" type="email" placeholder="Email" required
                value="<%= (form && form.email) ? form.email : '' %>">
+        <!-- Email field (required). Browser will also check email format.
+             Repopulated on re-render after errors. -->
+
         <input id="password" name="password" type="password" placeholder="Password (min 6 chars)" required minlength="6">
+        <!-- Password field (required). Client-side hint: minimum length 6 (still validate on server). -->
+
         <input id="confirmPassword" name="confirmPassword" type="password" placeholder="Confirm password" required minlength="6">
+        <!-- Confirm password (required). Server checks it matches the first password. -->
+
         <button type="submit">Create account</button>
+        <!-- Submit button to send the form to the server. -->
       </form>
+
       <p class="muted" style="margin-top:12px;text-align:right;">Already have an account? <a href="/auth/login">Log in</a></p>
+      <!-- Convenience link to go back to the Login page. -->
     </div>
   </section>
 
   <footer>© BookHive</footer>
+  <!-- Simple footer at the bottom of the page. -->
 
   <script src="/js/student.js"></script>
+  <!-- Your site’s JS bundle for student-facing pages (if present). -->
+
   <script>
     (function(){
       var KEY='bh-dark';
+      // Storage key for saving the user's theme preference.
+
       function set(flag){
         document.documentElement.classList.toggle('dark', !!flag);
+        // Apply or remove the 'dark' class on <html>.
+
         try{ localStorage.setItem(KEY, flag ? '1':'0'); }catch(e){}
+        // Persist the preference in localStorage; guard in case storage is unavailable.
+
         var t=document.getElementById('darkToggle');
         var sw=document.getElementById('darkSwitch');
         if(t){ t.checked = !!flag; }
+        // Keep the checkbox UI in sync with the applied theme.
+
         if(sw){ sw.setAttribute('aria-checked', !!flag); }
+        // Update ARIA state for accessibility tools.
       }
+
       document.addEventListener('DOMContentLoaded', function(){
-        var saved=false; try{ saved = localStorage.getItem(KEY)==='1'; }catch(e){}
+        var saved=false; 
+        try{ saved = localStorage.getItem(KEY)==='1'; }catch(e){}
+        // Read previously saved preference (defaults to light when nothing saved).
+
         set(saved);
+        // Apply the saved theme after DOM is ready (the early script already minimized FOUC).
+
         var t=document.getElementById('darkToggle');
         var sw=document.getElementById('darkSwitch');
 
-        if(t){ t.addEventListener('change', e => set(e.target.checked)); }
+        if(t){ 
+          t.addEventListener('change', e => set(e.target.checked));
+          // Toggle theme when the checkbox is clicked.
+        }
+
         if(sw){
           sw.addEventListener('click', ev => { if(ev.target!==t) set(!t.checked); });
+          // Also allow clicking the label area to toggle (if click wasn't on the checkbox itself).
+
           sw.addEventListener('keydown', ev => {
             if(ev.key===' '||ev.key==='Enter'){ ev.preventDefault(); set(!t.checked); }
           });
+          // Keyboard accessibility: Space/Enter toggles the switch when the label is focused.
         }
       });
     })();
+    // IIFE: encapsulates variables and wires up the dark-mode toggle logic.
   </script>
 </body>
 </html>
