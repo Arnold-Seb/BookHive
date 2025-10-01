@@ -91,7 +91,7 @@ Open: http://localhost:3000
 - View PDF: click “📄 View PDF” to open the embedded viewer.
 - Search & Filters: quickly narrow by text, Status (all/online/offline), and Availability.
 
-###🎓 Student Panel Guide
+### 🎓 Student Panel Guide
 - **Login**: Access via `/student` (requires student login).  
 - **View Books**: Browse a list of all available books with title, author, genre, and current stock.  
 - **Borrow Book**:  
