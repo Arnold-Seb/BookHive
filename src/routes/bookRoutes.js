@@ -10,11 +10,11 @@ import {
   returnBook,
   getLoanHistory,
   getBorrowStats,
-  getActiveLoans   // ✅ new controller
+  getActiveLoans   
 } from "../controllers/bookController.js";
 import { listReviews, upsertMyReview, deleteMyReview } from "../controllers/reviewController.js";
 import Book from "../models/Book.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { authMiddleware, requireAuth } from "../middleware/authMiddleware.js"; 
 
 const router = express.Router();
 
@@ -22,27 +22,28 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 /* ---------- CRUD ---------- */
-router.get("/", getBooks);
-router.post("/", upload.single("pdfFile"), addBook);
-router.put("/:id", upload.single("pdfFile"), updateBook);
-router.delete("/:id", deleteBook);
+router.get("/", authMiddleware, getBooks); // public list, attach user if token exists
+router.post("/", requireAuth, upload.single("pdfFile"), addBook);
+router.put("/:id", requireAuth, upload.single("pdfFile"), updateBook);
+router.delete("/:id", requireAuth, deleteBook);
 
 /* ---------- Loan history ---------- */
-router.get("/history", authMiddleware, getLoanHistory);
+router.get("/history", requireAuth, getLoanHistory);
 
 /* ---------- Borrow stats ---------- */
-router.get("/stats/borrowed", authMiddleware, getBorrowStats);
+router.get("/stats/borrowed", requireAuth, getBorrowStats);
 
 /* ---------- Borrow / Return ---------- */
-router.patch("/:id/borrow", authMiddleware, borrowBook);
-router.patch("/:id/return", authMiddleware, returnBook);
+router.patch("/:id/borrow", requireAuth, borrowBook);
+router.patch("/:id/return", requireAuth, returnBook);
 
 /* ---------- Active Loans for a Book ---------- */
-router.get("/:id/activeLoans", authMiddleware, getActiveLoans);
+router.get("/:id/activeLoans", requireAuth, getActiveLoans);
+
 /* ---------- Reviews ---------- */
-router.get("/:id/reviews", listReviews);                    // public
-router.post("/:id/reviews", authMiddleware, upsertMyReview); // user upsert
-router.delete("/:id/reviews/my", authMiddleware, deleteMyReview);
+router.get("/:id/reviews", listReviews);                       // public
+router.post("/:id/reviews", requireAuth, upsertMyReview);      // user must login
+router.delete("/:id/reviews/my", requireAuth, deleteMyReview); // user must login
 
 /* ---------- PDF fetch ---------- */
 router.get("/:id/pdf", async (req, res) => {

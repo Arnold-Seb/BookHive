@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import { JWT_SECRET } from "../config/secrets.js";
-import { requireAuth } from "../middlewares/authMiddleware.js";
+import { requireAuth } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
